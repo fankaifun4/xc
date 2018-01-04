@@ -44,12 +44,11 @@
 					<div class="close-change" @click="closeChangeImg">关闭</div>
 					<div class="upload" @click="uploadPics">上传图片</div>
 					<div class="change" @click="changePics">修改图片</div>
+					<div class="change" @click="drawItems">确定</div>
 					<div class="readerImg">
 						<img :src="itemsFile" alt="" ref="readFile">
 					</div>
-					<div class="change" @click="drawItems">
-						确定
-					</div>
+					
 				</div>
 				<input type="file" name="" @change="getFiles" ref="uploadFiles"
 				 accept=".jpg, .jpeg, .png"  style="display:none" >
@@ -125,7 +124,8 @@
         },
         methods:{
         	closeChangeImg(){
-        		this.closeChangeImg=false;
+        		this.isChangeImg=false;
+				
         	},
 			set_c_wh(){
 				let _this=this;
@@ -137,7 +137,8 @@
 				  	_this.data.forEach(item=>{
 				  		_this.insertPic(item)
 				  	})
-				  	_this.drawImg();
+					let img=_this.$refs.img1
+				  	_this.drawImg(img);
 				},400)
 			},
 			//初始化画布
@@ -157,11 +158,18 @@
 				let h=this.cvs.height
 				this.context.clearRect(0,0,w,h);
 			},
-			drawImg(){
+			drawImg(img){
 				let w=this.cvs.width
 				let h=this.cvs.height
-				let img=this.$refs.img1;
 				this.context.drawImage(img,0,0,w,h)
+			},
+			drawAvard(data){
+				let w=this.cvs.width
+				let h=this.cvs.height
+				let img=new Image()
+				let p=this.getPosition(data)
+				img.src=data.pic
+				this.context.drawImage(img,p.l,p.t,img.width,img.height)
 			},
 			//插入空占位图
 			insertPic(data){
@@ -175,19 +183,25 @@
                 this.context.beginPath()
                 this.context.save()
                 this.context.fillStyle="#ccc"
-                this.context.rotate(Math.PI/180*data.rotate)
-                this.context.fillRect(l,t,w,h)
-				//添加十字架
-				this.context.strokeStyle="#4091DD"
-				this.context.lineWidth="5"
-				this.context.lineCap="round"
-				this.context.moveTo(addL,addT-8)
-				this.context.lineTo(addL,addT+8)
-				this.context.stroke();
-                this.context.moveTo(addL-8,addT)
-				this.context.lineTo(addL+8,addT)
-				this.context.stroke();
-                this.context.restore()
+				this.context.rotate(Math.PI/180*data.rotate)
+				if( !data.pic ){
+					this.context.fillRect(l,t,w,h)
+					//添加十字架
+					this.context.strokeStyle="#4091DD"
+					this.context.lineWidth="5"
+					this.context.lineCap="round"
+					this.context.moveTo(addL,addT-8)
+					this.context.lineTo(addL,addT+8)
+					this.context.stroke();
+					this.context.moveTo(addL-8,addT)
+					this.context.lineTo(addL+8,addT)
+					this.context.stroke()
+					this.context.restore()
+				}else{
+					this.drawAvard(data)
+					this.context.restore()
+				}
+				
 			},
 			//获取当前图像载体
 			getItems(e){
@@ -237,7 +251,8 @@
 				this.data.forEach(item=>{
 					this.insertPic(item)
 				})
-				this.drawImg();
+				let img=this.$refs.img1
+				this.drawImg(img);
 				this.computPX(cur)
 				this.cutRect={
 					left:p.l+'px',
@@ -272,7 +287,8 @@
 				this.data.forEach(item=>{
 					this.insertPic(item)
 				})
-				this.drawImg();
+				let img=this.$refs.img1
+				this.drawImg(img);
 				this.cutRect={
 					left:p.l+'px',
 					top:p.t+'px'
@@ -295,7 +311,6 @@
 				fs.onload=(e)=>{
 					this.current.pic=e.target.result
 				}
-				
 			},
 			changePics(){
 
@@ -303,8 +318,12 @@
 			drawItems(){
 				let readFile=this.$refs.readFile;
 				let cur=this.current;
-				console.log(cur)
-				// this.context.drawImage(readFile,0,0,100,100)
+				this.clearRect();
+				this.data.forEach(item=>{
+					this.insertPic(item)
+				})
+				let img=this.$refs.img1
+				this.drawImg(img)
 			},
 			getObjectURL(file) {
 		        var url = null;
