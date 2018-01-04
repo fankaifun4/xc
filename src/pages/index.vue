@@ -34,8 +34,36 @@
 			</div>
 			<div class="slicePic" v-show="isChange" :style="cutRect">
 				<div class="cut">裁剪</div>
-				<div class="upload" @click="uploadPic">上传</div>
+				<div class="upload" @click="uploadPic">修改图片</div>
 				<div class="delete">删除</div>
+			</div>
+		</div>
+		<div class="changeImg" v-show="isChangeImg">
+			<div class="chang-img-wrap">
+				<div class="wrap-body">
+					<div class="close-change" @click="closeChangeImg">关闭</div>
+					<div class="upload" @click="uploadPics">上传图片</div>
+					<div class="change" @click="changePics">修改图片</div>
+					<div class="readerImg">
+						<img :src="itemsFile" alt="" ref="readFile">
+					</div>
+					<div class="change" @click="drawItems">
+						确定
+					</div>
+				</div>
+				<input type="file" name="" @change="getFiles" ref="uploadFiles"
+				 accept=".jpg, .jpeg, .png"  style="display:none" >
+			</div>
+		</div>
+		<div class="img-items">
+			<div class="img-wrap" ref="imgWrap">
+				<img src="../assets/bgs/aa.png" alt="" ref='img1'>
+				<img src="../assets/bgs/aa.png" alt="" ref='img2'>
+				<img src="../assets/bgs/aa.png" alt="" ref='img3'>
+				<img src="../assets/bgs/aa.png" alt="" ref='img4'>
+				<img src="../assets/bgs/aa.png" alt="" ref='img5'>
+				<img src="../assets/bgs/aa.png" alt="" ref='img6'>
+				<img src="../assets/bgs/aa.png" alt="" ref='img7'>
 			</div>
 		</div>
 	</section>
@@ -46,23 +74,33 @@
         data(){
             return {
                 linkChange:'linkChange',
-                bgimg:null,
+                isChangeImg:false,
+                itemsFile:null,
                 data:[{
-                	width:20,
-                	height:30,
-                	top:3,
-                    left:5,
+                	width:60,
+                	height:50,
+                	top:8,
+                    left:0,
                     rotate:0,
                 	id:'imageone',
                 	opcity:1,
                 	pic:null
                 },{
-                	width:40,
-                	height:40,
-                	top:10,
-                    left:30,
+                	width:30,
+                	height:70,
+                	top:15,
+                    left:65,
                     rotate:0,
                 	id:'imagetwo',
+                	opcity:1,
+                	pci:null
+                },{
+                	width:40,
+                	height:40,
+                	top:58,
+                    left:12,
+                    rotate:0,
+                	id:'imagethree',
                 	opcity:1,
                 	pci:null
                 }],
@@ -86,6 +124,9 @@
         	this.init();
         },
         methods:{
+        	closeChangeImg(){
+        		this.closeChangeImg=false;
+        	},
 			set_c_wh(){
 				let _this=this;
 				setTimeout(function(){
@@ -96,6 +137,7 @@
 				  	_this.data.forEach(item=>{
 				  		_this.insertPic(item)
 				  	})
+				  	_this.drawImg();
 				},400)
 			},
 			//初始化画布
@@ -104,16 +146,22 @@
 	        	this.cparent=this.$refs.canvaswrap
 	        	this.context=this.cvs.getContext('2d')
 	        	this.set_c_wh();
-	        	let _this=this;
-	        	window.onresize=function(){
-	        		_this.set_c_wh();
-	        	}
+	        	
+	        	let imgwrap=this.$refs.imgWrap
+	        	let children=imgwrap.children
+	        	imgwrap.style.width=(children[0].clientWidth+10)*children.length+'px'
 			},
 			//清除画布
 			clearRect(){
 				let w=this.cvs.width
 				let h=this.cvs.height
 				this.context.clearRect(0,0,w,h);
+			},
+			drawImg(){
+				let w=this.cvs.width
+				let h=this.cvs.height
+				let img=this.$refs.img1;
+				this.context.drawImage(img,0,0,w,h)
 			},
 			//插入空占位图
 			insertPic(data){
@@ -129,11 +177,16 @@
                 this.context.fillStyle="#ccc"
                 this.context.rotate(Math.PI/180*data.rotate)
                 this.context.fillRect(l,t,w,h)
-                
 				//添加十字架
-				this.context.fillStyle="#999"
-				this.context.fillRect(addL-15,addT-3,30,6)
-                this.context.fillRect(addL-3,addT-15,6,30)
+				this.context.strokeStyle="#4091DD"
+				this.context.lineWidth="5"
+				this.context.lineCap="round"
+				this.context.moveTo(addL,addT-8)
+				this.context.lineTo(addL,addT+8)
+				this.context.stroke();
+                this.context.moveTo(addL-8,addT)
+				this.context.lineTo(addL+8,addT)
+				this.context.stroke();
                 this.context.restore()
 			},
 			//获取当前图像载体
@@ -178,12 +231,13 @@
             changePosition(value,name){
                 let cur=this.current
                 cur[name]=parseInt(cur[name]+value)
-                console.log( cur[name] )
+                this.isChange=false;
 				let p=this.getPosition(cur)
 				this.clearRect();
 				this.data.forEach(item=>{
 					this.insertPic(item)
 				})
+				this.drawImg();
 				this.computPX(cur)
 				this.cutRect={
 					left:p.l+'px',
@@ -218,24 +272,81 @@
 				this.data.forEach(item=>{
 					this.insertPic(item)
 				})
+				this.drawImg();
 				this.cutRect={
 					left:p.l+'px',
 					top:p.t+'px'
 				}
             },
 			uploadPic(){
-				this.$router.push({name:"upload",query:{id:this.current.id}})
-			}
+				this.isChange=false;
+				this.isChangeImg=true;
+			},
+			uploadPics(){
+				let uploadFiles=this.$refs.uploadFiles;
+				uploadFiles.dispatchEvent(new MouseEvent('click'));
+			},
+			getFiles(){
+				let uploadFiles=this.$refs.uploadFiles;
+				let src=this.getObjectURL(uploadFiles.files[0])
+				this.itemsFile=src;
+				let fs=new FileReader()
+				fs.readAsDataURL(uploadFiles.files[0])
+				fs.onload=(e)=>{
+					this.current.pic=e.target.result
+				}
+				
+			},
+			changePics(){
+
+			},
+			drawItems(){
+				let readFile=this.$refs.readFile;
+				let cur=this.current;
+				console.log(cur)
+				// this.context.drawImage(readFile,0,0,100,100)
+			},
+			getObjectURL(file) {
+		        var url = null;
+		        if (window.createObjectURL != undefined) {
+		            url = window.createObjectURL(file)
+		        } else if (window.URL != undefined) {
+		            url = window.URL.createObjectURL(file)
+		        } else if (window.webkitURL != undefined) {
+		            url = window.webkitURL.createObjectURL(file)
+		        }
+		        return url
+		    }
+
         }
     }
 </script>
 <style scoped lang="scss">
+	.img-items{
+		height:100px;
+		position:absolute;
+		bottom: 0;
+		left:0;
+		right:0;
+		overflow-x:auto;
+		.img-wrap{
+			overflow: hidden;
+			display: flex;
+			img{
+				width:100px;
+				height:100px;
+				display: block;
+				margin:0 10px;
+			}
+		}
+		
+	}
 	.xc-content{
 		position:absolute;
 		top:0;
 		left:0;
 		right:0;
-		bottom:0;
+		bottom:100;
 		overflow-x:hidden;
 	}
 	.xc-wrap{
@@ -257,22 +368,27 @@
 			display: flex;
 			align-items:center;
 			justify-content:center;
-			padding:15px;
 			width:50%;
 			margin-bottom:20px;
 			background: #fff;
 			box-sizing:border-box;
 			>div{
-				padding:15px 20px;
+				padding:10px 15px;
 			}
 			.btn{
 				border:1px solid #f90;
 				background: #fff;
 				cursor: pointer;
 				font-weight: 700;
+				border-radius: 3px;
+				background:#0099FF;
+				color:#fff;
+				font-size:30px;
 			}
 			.value{
 				background:#fff;
+				width:70px;
+				text-align: center;
 			}
 		}
 	}
@@ -296,6 +412,47 @@
 			height:100%;
 			&:active{
 				background:#999;
+			}
+		}
+	}
+	.changeImg{
+		position: absolute;
+		z-index: 99;
+		left: 0;
+		top:0;
+		right: 0;
+		bottom:0;
+		.chang-img-wrap{
+			position: relative;
+			background:rgba(0,0,0,.5);	
+			height:100%;
+			.wrap-body{
+				padding:20px 30px;
+				color:#000;
+				text-align: center;
+				>div{
+					padding:20px 30px;
+					border:1px solid #cecece;
+					border-radius: 5px;
+					color:#fff;
+					font-size:34px;
+				}
+				.upload{
+					position:relative;
+					margin-top:430px;
+					background:#093;
+				}
+				.change{
+					margin-top:50px;
+					background:#990000;
+				}
+				.close-change{
+					width:70px;
+					background:rgba(255,255,255,.5);
+					position:absolute;
+					right:10px;
+					top:10px;
+				}
 			}
 		}
 	}
