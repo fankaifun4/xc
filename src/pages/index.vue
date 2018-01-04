@@ -164,8 +164,10 @@
 				this.context.drawImage(img,0,0,w,h)
 			},
 			drawAvard(data){
-				let w=this.cvs.width
-				let h=this.cvs.height
+				let w=this.cvs.width*data.width/100
+				let h=this.cvs.height*data.height/100
+				let l=this.cvs.width*data.left/100
+				let t=this.cvs.height*data.top/100
 				let img=new Image()
 				let p=this.getPosition(data)
 				img.src=data.pic
@@ -304,20 +306,21 @@
 			},
 			getFiles(){
 				let uploadFiles=this.$refs.uploadFiles;
-				let src=this.getObjectURL(uploadFiles.files[0])
-				this.itemsFile=src;
 				let fs=new FileReader()
-				fs.readAsDataURL(uploadFiles.files[0])
 				fs.onload=(e)=>{
 					this.current.pic=e.target.result
+					this.itemsFile=e.target.result
 				}
+				fs.readAsDataURL(uploadFiles.files[0])
 			},
 			changePics(){
 
 			},
 			drawItems(){
-				let readFile=this.$refs.readFile;
 				let cur=this.current;
+				let readFile=this.$refs.readFile
+				let imgitems=readFile.src
+				cur.pic=imgitems;
 				this.clearRect();
 				this.data.forEach(item=>{
 					this.insertPic(item)
