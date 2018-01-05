@@ -26,9 +26,9 @@
 					<div class="btn" @click="sliceSize(-1,'height')">高度-</div>
 				</div>
                 <div class="ctrl-i">
-					<div class="btn" @click="changRoate(1)">旋转+</div>
+					<div class="btn" @click="changRoate(-1)">旋转+</div>
 					<div class="value">{{computedValue.rotate}}</div>
-					<div class="btn" @click="changRoate(-1)">旋转-</div>
+					<div class="btn" @click="changRoate(1)">旋转-</div>
 				</div>
 			
 			</div>
@@ -37,6 +37,7 @@
 				<div class="upload" @click="uploadPic">修改图片</div>
 				<div class="delete">删除</div>
 			</div>
+			<div class="saveImg" @click="saveImage">保存</div>
 		</div>
 		<div class="changeImg" v-show="isChangeImg">
 			<div class="chang-img-wrap">
@@ -44,7 +45,8 @@
 					<div class="close-change" @click="closeChangeImg">关闭</div>
 					<div class="upload" @click="uploadPics">上传图片</div>
 					<div class="change" @click="changePics">修改图片</div>
-					<div class="change" @click="drawItems">确定</div>
+					<div class="success" @click="drawItems">确定上传</div>
+					<div class="lookload">预览</div>
 					<div class="readerImg">
 						<img :src="itemsFile" alt="" ref="readFile">
 					</div>
@@ -54,6 +56,8 @@
 				 accept=".jpg, .jpeg, .png"  style="display:none" >
 			</div>
 		</div>
+		<!-- 裁剪组件  -->
+		<cut :aspectr="ratio"></cut>
 		<div class="img-items">
 			<div class="img-wrap" ref="imgWrap">
 				<img src="../assets/bgs/aa.png" alt="" ref='img1'>
@@ -68,32 +72,42 @@
 	</section>
 </template>
 <script>
+	import cut from '@/components/cut'
 	export default {
         name:'pageHome',
+        components:{
+        	cut
+        },
         data(){
             return {
                 linkChange:'linkChange',
                 isChangeImg:false,
                 itemsFile:null,
-                data:[{
+                ratio:1,
+                data:[
+                {
                 	width:60,
                 	height:50,
-                	top:8,
-                    left:0,
+                	top:10,
+                    left:10,
                     rotate:0,
                 	id:'imageone',
                 	opcity:1,
-                	pic:null
-                },{
+                	pic:null,
+                	aspectRatio:1
+                }
+                ,{
                 	width:30,
                 	height:70,
                 	top:15,
                     left:65,
-                    rotate:0,
+                    rotate:15,
                 	id:'imagetwo',
                 	opcity:1,
-                	pci:null
-                },{
+                	pci:null,
+                	aspectRatio:1
+                }
+                ,{
                 	width:40,
                 	height:40,
                 	top:58,
@@ -101,8 +115,10 @@
                     rotate:0,
                 	id:'imagethree',
                 	opcity:1,
-                	pci:null
-                }],
+                	pci:null,
+                	aspectRatio:1
+                }
+                ],
                 cvs:null,
                 cparent:null,
                 context:null,
@@ -125,7 +141,6 @@
         methods:{
         	closeChangeImg(){
         		this.isChangeImg=false;
-				
         	},
 			set_c_wh(){
 				let _this=this;
@@ -147,10 +162,9 @@
 	        	this.cparent=this.$refs.canvaswrap
 	        	this.context=this.cvs.getContext('2d')
 	        	this.set_c_wh();
-	        	
 	        	let imgwrap=this.$refs.imgWrap
 	        	let children=imgwrap.children
-	        	imgwrap.style.width=(children[0].clientWidth+10)*children.length+'px'
+	        	imgwrap.style.width=(children[0].clientWidth+10)*children.length+'rem'
 			},
 			//清除画布
 			clearRect(){
@@ -168,10 +182,20 @@
 				let h=this.cvs.height*data.height/100
 				let l=this.cvs.width*data.left/100
 				let t=this.cvs.height*data.top/100
+				let addL=l+w/2
+				let addT=t+h/2
+				//复原图画位置
+				let rx=-addL+l
+				let ry=-addT+t
+				this.context.translate(addL,addT)
+				this.context.rotate(Math.PI/180*data.rotate)
+				// this.context.translate(l + w/2, t +h/2);
+				// this.context.rotate((Math.PI/180)*5);//旋转角度
 				let img=new Image()
 				let p=this.getPosition(data)
 				img.src=data.pic
-				this.context.drawImage(img,p.l,p.t,img.width,img.height)
+				console.log(img.width,img.height)
+				this.context.drawImage(img,rx,ry,img.width,img.height)
 			},
 			//插入空占位图
 			insertPic(data){
@@ -181,29 +205,36 @@
 				let t=this.cvs.height*data.top/100
 				let addL=l+w/2
 				let addT=t+h/2
+				//复原图画位置
+				let rx=-addL+l
+				let ry=-addT+t
+				//画图位置与中心点成反数
+				//加号位置
+				let addx=-(addL-w/2)+l
+				let addy=-(addT-h/2)+t
 				//画矩形
                 this.context.beginPath()
                 this.context.save()
-                this.context.fillStyle="#ccc"
-				this.context.rotate(Math.PI/180*data.rotate)
+                this.context.translate(0,0);
 				if( !data.pic ){
-					this.context.fillRect(l,t,w,h)
+                	this.context.fillStyle="#ccc"
+					this.context.translate(addL,addT)
+					this.context.rotate(Math.PI/180*data.rotate)
+					this.context.fillRect(rx,ry,w,h)
 					//添加十字架
 					this.context.strokeStyle="#4091DD"
 					this.context.lineWidth="5"
 					this.context.lineCap="round"
-					this.context.moveTo(addL,addT-8)
-					this.context.lineTo(addL,addT+8)
+					this.context.moveTo(addx,addy-8)
+					this.context.lineTo(addx,addy+8)
 					this.context.stroke();
-					this.context.moveTo(addL-8,addT)
-					this.context.lineTo(addL+8,addT)
+					this.context.moveTo(addy-8,addx)
+					this.context.lineTo(addy+8,addx)
 					this.context.stroke()
-					this.context.restore()
 				}else{
 					this.drawAvard(data)
-					this.context.restore()
 				}
-				
+				this.context.restore()
 			},
 			//获取当前图像载体
 			getItems(e){
@@ -317,6 +348,24 @@
 
 			},
 			drawItems(){
+				// let uploadFiles=this.$refs.uploadFiles;
+				// if(uploadFiles.files[0].size>1024*1024*2) {
+				// 	alert('图片必须小于2M')
+				// 	return;
+				// }
+				// let bob=uploadFiles.files[0]
+				// let file=new FormData();
+				// file.append('file',bob)
+				// this.$http.post('/api/upload',file,{
+				// 		headers:{'Content-Type':'multipart/form-data'}
+				// 	}
+				// )
+				// .then(function(res){
+				// 	console.log(res)
+				// })
+				// .catch(function(er){
+				// 	console.log(er)
+				// })
 				let cur=this.current;
 				let readFile=this.$refs.readFile
 				let imgitems=readFile.src
@@ -338,30 +387,63 @@
 		            url = window.webkitURL.createObjectURL(file)
 		        }
 		        return url
+		    },
+		    saveImage(){
+		    	var image = new Image();
+		    	var data = this.cvs.toDataURL("image/png");
+				// data = data.split(',')[1];
+				// var ia = new Uint8Array(data.length);
+				//          for (var i = 0; i < data.length; i++) {
+				//              ia[i] = data.charCodeAt(i);
+				//          }
+				// var blob = new Blob([ia], { type: 'image/png' });
+				var file = new FormData();
+                file.append('file', data);
+                this.$http.post('/api/upbob',file,{
+						headers:{'Content-Type':'multipart/form-data'}
+					}
+				)
+				.then(function(res){
+					console.log(res)
+				})
+				.catch(function(er){
+					console.log(er)	
+				})
+				return image;
 		    }
 
         }
     }
 </script>
 <style scoped lang="scss">
+	.saveImg{
+		padding:15px 20px;
+		background:#090;
+		color:#fff;
+		box-sizing:border-box;
+		border-radius: 5px;
+		margin:10px 30px;
+		text-align: center;
+		font-size:40px;
+	}
 	.img-items{
-		height:100px;
+		height:240px;
 		position:absolute;
-		bottom: 0;
+		bottom: 20px;
 		left:0;
 		right:0;
 		overflow-x:auto;
+		overflow-y:hidden;
 		.img-wrap{
-			overflow: hidden;
-			display: flex;
 			img{
-				width:100px;
-				height:100px;
+				border:1px solid #ccc;
+				padding:10px;
+				float: left;
+				width:240px;
 				display: block;
 				margin:0 10px;
 			}
 		}
-		
 	}
 	.xc-content{
 		position:absolute;
@@ -448,20 +530,42 @@
 			position: relative;
 			background:rgba(0,0,0,.5);	
 			height:100%;
+			overflow-y:auto;
+			height:100%;
 			.wrap-body{
 				padding:20px 30px;
 				color:#000;
 				text-align: center;
 				>div{
-					padding:20px 30px;
+					padding:20px 15px;
 					border:1px solid #cecece;
 					border-radius: 5px;
 					color:#fff;
 					font-size:34px;
 				}
+				.readerImg{
+					margin-top:10px;
+					padding:0;
+					border-radius: 0;
+					background:#fff;
+					>img{
+						width:100%;
+						display: block;
+					}
+				}
+				.success{
+					margin-top:50px;
+					background:#990000;
+				}
+				.lookload{
+					margin-top:30px;
+					border-radius: 0;
+					background:#fff;
+					color:#333;
+				}
 				.upload{
 					position:relative;
-					margin-top:430px;
+					margin-top:100px;
 					background:#093;
 				}
 				.change{
