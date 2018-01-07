@@ -4,6 +4,7 @@
 			<div class="xc-wrap" ref="canvaswrap">
 				<canvas ref="canvas" class="canvas" @click="getItems"></canvas>
 			</div>
+			<div class="onlodImage fade" ref="onloadImage"></div>
 			<div class="ctrl">
 				<div class="ctrl-i">
 					<div class="btn" @click="sliceLeft(-1)">左移</div>
@@ -30,10 +31,9 @@
 					<div class="value">{{computedValue.rotate}}</div>
 					<div class="btn" @click="changRoate(1)">旋转-</div>
 				</div>
-			
 			</div>
 			<div class="slicePic" v-show="isChange" :style="cutRect">
-				<div class="cut">裁剪</div>
+				<div class="cut" @click="cutPic">裁剪</div>
 				<div class="upload" @click="uploadPic">修改图片</div>
 				<div class="delete">删除</div>
 			</div>
@@ -50,33 +50,36 @@
 					<div class="readerImg">
 						<img :src="itemsFile" alt="" ref="readFile">
 					</div>
-					
 				</div>
 				<input type="file" name="" @change="getFiles" ref="uploadFiles"
 				 accept=".jpg, .jpeg, .png"  style="display:none" >
 			</div>
 		</div>
 		<!-- 裁剪组件  -->
-		<cut :aspectr="ratio"></cut>
+		<cut :aspectr="ratio" :class="isCut?'show':'hidden'" @cancel="cancel"></cut>
 		<div class="img-items">
 			<div class="img-wrap" ref="imgWrap">
-				<img src="../assets/bgs/aa.png" alt="" ref='img1'>
-				<img src="../assets/bgs/aa.png" alt="" ref='img2'>
-				<img src="../assets/bgs/aa.png" alt="" ref='img3'>
-				<img src="../assets/bgs/aa.png" alt="" ref='img4'>
-				<img src="../assets/bgs/aa.png" alt="" ref='img5'>
-				<img src="../assets/bgs/aa.png" alt="" ref='img6'>
-				<img src="../assets/bgs/aa.png" alt="" ref='img7'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img1'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img2'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img3'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img4'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img5'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img6'>
+				<img src="http://localhost:3000/images/aa.png" alt="" ref='img7'>
 			</div>
 		</div>
+		<loading v-show="isloading"></loading>
 	</section>
 </template>
 <script>
 	import cut from '@/components/cut'
+	import loading from '@/components/loading'
+	import {mapState,mapActions} from 'vuex'
 	export default {
         name:'pageHome',
         components:{
-        	cut
+			cut,
+			loading
         },
         data(){
             return {
@@ -84,8 +87,9 @@
                 isChangeImg:false,
                 itemsFile:null,
                 ratio:1,
-                data:[
-                {
+				isCut:false,
+				isloading:false,
+                data:[{
                 	width:60,
                 	height:50,
                 	top:10,
@@ -93,10 +97,9 @@
                     rotate:0,
                 	id:'imageone',
                 	opcity:1,
-                	pic:null,
-                	aspectRatio:1
-                }
-                ,{
+                	pic:"http://localhost:3000/images/1.jpg",
+					aspectRatio:1,
+                },{
                 	width:30,
                 	height:70,
                 	top:15,
@@ -104,10 +107,9 @@
                     rotate:15,
                 	id:'imagetwo',
                 	opcity:1,
-                	pci:null,
-                	aspectRatio:1
-                }
-                ,{
+                	pic:"",
+					aspectRatio:1,
+                },{
                 	width:40,
                 	height:40,
                 	top:58,
@@ -115,10 +117,9 @@
                     rotate:0,
                 	id:'imagethree',
                 	opcity:1,
-                	pci:null,
-                	aspectRatio:1
-                }
-                ],
+                	pic:"",
+					aspectRatio:1,
+                }],
                 cvs:null,
                 cparent:null,
                 context:null,
@@ -132,13 +133,29 @@
                     rotate:0
                 },
                 isChange:false,
-                cutRect:{}
+				cutRect:{},
+				bgImg:null,
             }
         },
         mounted(){
+			this.onloadItems()
         	this.init();
-        },
+		},
+		computed:{
+			...mapState(['imgId','imgUrl','imglist']),
+			...mapActions(['setImg','getImg','getAll']),
+		},
         methods:{
+			//缓存元素图片
+			onloadItems(){
+				this.data.forEach(item=>{
+					let items=new Image()
+					items.src=item.pic
+					items.id=item.id
+					$(this.$refs.onloadImage).empty()
+					$(this.$refs.onloadImage).append(items)
+				})
+			},
         	closeChangeImg(){
         		this.isChangeImg=false;
         	},
@@ -152,17 +169,17 @@
 				  	_this.data.forEach(item=>{
 				  		_this.insertPic(item)
 				  	})
-					let img=_this.$refs.img1
-				  	_this.drawImg(img);
+					_this.drawBgImg(_this.bgImg)
 				},400)
 			},
 			//初始化画布
 			init(){
+				this.bgImg=this.$refs.img1;
 				this.cvs=this.$refs.canvas
 	        	this.cparent=this.$refs.canvaswrap
 	        	this.context=this.cvs.getContext('2d')
 	        	this.set_c_wh();
-	        	let imgwrap=this.$refs.imgWrap
+				let imgwrap=this.$refs.imgWrap
 	        	let children=imgwrap.children
 	        	imgwrap.style.width=(children[0].clientWidth+10)*children.length+'rem'
 			},
@@ -172,12 +189,14 @@
 				let h=this.cvs.height
 				this.context.clearRect(0,0,w,h);
 			},
-			drawImg(img){
-				let w=this.cvs.width
-				let h=this.cvs.height
-				this.context.drawImage(img,0,0,w,h)
+			drawBgImg(img){
+				let _this=this
+				let w=_this.cvs.width
+				let h=_this.cvs.height
+				_this.context.globalCompositeOperation="source-over";
+				_this.context.drawImage(img,0,0,w,h)
 			},
-			drawAvard(data){
+			drawAvard(data,avard){
 				let w=this.cvs.width*data.width/100
 				let h=this.cvs.height*data.height/100
 				let l=this.cvs.width*data.left/100
@@ -189,13 +208,11 @@
 				let ry=-addT+t
 				this.context.translate(addL,addT)
 				this.context.rotate(Math.PI/180*data.rotate)
-				// this.context.translate(l + w/2, t +h/2);
-				// this.context.rotate((Math.PI/180)*5);//旋转角度
-				let img=new Image()
 				let p=this.getPosition(data)
-				img.src=data.pic
-				console.log(img.width,img.height)
-				this.context.drawImage(img,rx,ry,img.width,img.height)
+				//插入自定义图片
+				// this.context.globalCompositeOperation="copy";
+				this.context.drawImage(avard,rx,ry,w,h)
+				this.context.restore()
 			},
 			//插入空占位图
 			insertPic(data){
@@ -212,12 +229,23 @@
 				//加号位置
 				let addx=-(addL-w/2)+l
 				let addy=-(addT-h/2)+t
+				this.context.beginPath()
+				this.context.save()
+				this.context.translate(0,0)
 				//画矩形
-                this.context.beginPath()
-                this.context.save()
-                this.context.translate(0,0);
-				if( !data.pic ){
-                	this.context.fillStyle="#ccc"
+				if( data.pic ){
+					let items=new Image()
+					items.src=data.pic
+					items.id=data.id
+					if( items.complete ){
+						this.drawAvard(data,items)
+						return
+					}
+					items.onload=()=>{
+						this.drawAvard(data,items)
+					}
+				}else{
+					this.context.fillStyle="#ccc"
 					this.context.translate(addL,addT)
 					this.context.rotate(Math.PI/180*data.rotate)
 					this.context.fillRect(rx,ry,w,h)
@@ -227,14 +255,13 @@
 					this.context.lineCap="round"
 					this.context.moveTo(addx,addy-8)
 					this.context.lineTo(addx,addy+8)
-					this.context.stroke();
+					this.context.stroke()
 					this.context.moveTo(addy-8,addx)
 					this.context.lineTo(addy+8,addx)
 					this.context.stroke()
-				}else{
-					this.drawAvard(data)
-				}
-				this.context.restore()
+					this.context.restore()
+					this.context.translate(0,0)
+				}			
 			},
 			//获取当前图像载体
 			getItems(e){
@@ -253,6 +280,7 @@
 					}
 				})
 			},
+			//计算显示位置
 			computPX(current){
 				let value=this.getPosition(current)
 				this.computedValue={
@@ -275,17 +303,17 @@
                     rotate:cur.rotate
 				}
             },
+			//改变位置
             changePosition(value,name){
                 let cur=this.current
                 cur[name]=parseInt(cur[name]+value)
-                this.isChange=false;
+                this.isChange=false
 				let p=this.getPosition(cur)
-				this.clearRect();
+				this.clearRect()
 				this.data.forEach(item=>{
 					this.insertPic(item)
 				})
-				let img=this.$refs.img1
-				this.drawImg(img);
+				this.drawBgImg(this.bgImg)
 				this.computPX(cur)
 				this.cutRect={
 					left:p.l+'px',
@@ -299,7 +327,6 @@
 			},
 			sliceTop(value){
                 if( this.current ===null) return 
-               
 				this.changePosition(value,'top')			
             },
             changRoate(value){
@@ -308,10 +335,10 @@
             },
 			sliceSize(value,name){
 				if( this.current ===null){ return }
-				let cur=this.current;
+				let cur=this.current
 				let p=this.getPosition(cur)
                 this.computPX(cur)
-                this.clearRect();
+                this.clearRect()
 				if( name ==='width'){
 					cur.width+=value
 				}else if(name==='height'){
@@ -320,65 +347,73 @@
 				this.data.forEach(item=>{
 					this.insertPic(item)
 				})
-				let img=this.$refs.img1
-				this.drawImg(img);
+				this.drawBgImg(this.bgImg)
 				this.cutRect={
 					left:p.l+'px',
 					top:p.t+'px'
 				}
             },
 			uploadPic(){
-				this.isChange=false;
-				this.isChangeImg=true;
+				this.isChange=false
+				this.isChangeImg=true
 			},
 			uploadPics(){
-				let uploadFiles=this.$refs.uploadFiles;
-				uploadFiles.dispatchEvent(new MouseEvent('click'));
+				let uploadFiles=this.$refs.uploadFiles
+				uploadFiles.dispatchEvent(new MouseEvent('click'))
 			},
 			getFiles(){
-				let uploadFiles=this.$refs.uploadFiles;
+				let uploadFiles=this.$refs.uploadFiles
 				let fs=new FileReader()
 				fs.onload=(e)=>{
-					this.current.pic=e.target.result
 					this.itemsFile=e.target.result
 				}
 				fs.readAsDataURL(uploadFiles.files[0])
 			},
 			changePics(){
-
+				this.$router.push({name:'chiose',path:{ id:this.current.id }})
 			},
 			drawItems(){
-				// let uploadFiles=this.$refs.uploadFiles;
-				// if(uploadFiles.files[0].size>1024*1024*2) {
-				// 	alert('图片必须小于2M')
-				// 	return;
-				// }
-				// let bob=uploadFiles.files[0]
-				// let file=new FormData();
-				// file.append('file',bob)
-				// this.$http.post('/api/upload',file,{
-				// 		headers:{'Content-Type':'multipart/form-data'}
-				// 	}
-				// )
-				// .then(function(res){
-				// 	console.log(res)
-				// })
-				// .catch(function(er){
-				// 	console.log(er)
-				// })
-				let cur=this.current;
-				let readFile=this.$refs.readFile
-				let imgitems=readFile.src
-				cur.pic=imgitems;
-				this.clearRect();
-				this.data.forEach(item=>{
-					this.insertPic(item)
+				let _this=this
+				let cur=this.current
+				let uploadFiles=this.$refs.uploadFiles
+				if(uploadFiles.files[0].size>1024*1024*2) {
+					alert('图片必须小于2M')
+					return
+				}
+				let bob=uploadFiles.files[0]
+				let file=new FormData()
+				file.append('file',bob)
+				
+				_this.isloading=true
+				this.$http.post('/api/upload',file,{
+						headers:{'Content-Type':'multipart/form-data'}
+					}
+				)
+				.then(function(res){
+					let data=res.data
+					let url="http://tp.taodama.net/"
+					if(data.code){
+						_this.isloading=false
+						url+=data.img
+						cur.pic=url
+						_this.clearRect()
+						_this.data.forEach(item=>{
+							_this.insertPic(item)
+						})
+						_this.drawBgImg(_this.bgImg)
+						_this.isChangeImg=false
+						_this.$store.dispatch('setImg',url)
+					}
 				})
-				let img=this.$refs.img1
-				this.drawImg(img)
+				.catch(function(er){
+					console.log(er)
+					_this.isloading=false
+				})
+				// let cur=this.current
+				// let readFile=this.$refs.readFile
 			},
 			getObjectURL(file) {
-		        var url = null;
+		        var url = null
 		        if (window.createObjectURL != undefined) {
 		            url = window.createObjectURL(file)
 		        } else if (window.URL != undefined) {
@@ -389,16 +424,10 @@
 		        return url
 		    },
 		    saveImage(){
-		    	var image = new Image();
-		    	var data = this.cvs.toDataURL("image/png");
-				// data = data.split(',')[1];
-				// var ia = new Uint8Array(data.length);
-				//          for (var i = 0; i < data.length; i++) {
-				//              ia[i] = data.charCodeAt(i);
-				//          }
-				// var blob = new Blob([ia], { type: 'image/png' });
-				var file = new FormData();
-                file.append('file', data);
+		    	var image = new Image()
+		    	var data = this.cvs.toDataURL("image/png")
+				var file = new FormData()
+                file.append('file', data)
                 this.$http.post('/api/upbob',file,{
 						headers:{'Content-Type':'multipart/form-data'}
 					}
@@ -409,13 +438,35 @@
 				.catch(function(er){
 					console.log(er)	
 				})
-				return image;
-		    }
+				return image
+		    },
+			cutPic(){
+				let cur=this.current
+				if(!cur.pic) {
+					alert('没有裁剪的图片，请先添加图片')
+					this.isChange=false
+					return
+				}
+				this.isCut=true
+				this.isChange=false
+			},
+			cancel(){
+				this.isCut=false
+			}
 
         }
     }
 </script>
 <style scoped lang="scss">
+	.fade{
+		display: none
+	}
+	.hidden{
+		visibility: hidden;
+	}
+	.show{
+		visibility: visible
+	}
 	.saveImg{
 		padding:15px 20px;
 		background:#090;
@@ -428,7 +479,7 @@
 	}
 	.img-items{
 		height:240px;
-		position:absolute;
+		position:fixed;
 		bottom: 20px;
 		left:0;
 		right:0;
@@ -454,7 +505,7 @@
 		overflow-x:hidden;
 	}
 	.xc-wrap{
-		width:750px;
+		width:100%;
 		height:440px;
 		border:1px solid #f00;
 		margin:30px auto;

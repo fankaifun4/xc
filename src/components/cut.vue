@@ -3,63 +3,45 @@
 		<div class="wrap">
 			<div class="layzbody">
 				<div class="ctrl">
-					<div class="save" data-method="getCroppedCanvas">确定保存</div>
-					<div class="cancel">取消</div>
-					<div class="reset">重置</div>
+					<div class="save" data-method="getCroppedCanvas" @click="showCanvas" >确定</div>
+					<div class="cancel" @click="cancal">取消</div>
+					<div class="reset" @click="reset" >重置</div>
 				</div>
 				<div class="imgwrap">
-					<img src="../assets/bgs/aa.png" alt="" ref="cutImg">
+					<img :src="cutUrl" alt="" ref="cutImg">
 				</div>
 			</div>
 		</div>
 		<!-- Show the cropped image in modal -->
         <div class="modal docs-cropped" id="getCroppedCanvasModal" 
 			v-show="isDroop"
-			aria-labelledby="getCroppedCanvasTitle" role="dialog" tabindex="-1" @click="isDroop=false">
+			aria-labelledby="getCroppedCanvasTitle" role="dialog" tabindex="-1"	>
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
                 <button class="close" data-dismiss="modal" type="button" @click="isDroop=false">&times;</button>
                 <h4 class="modal-title" id="getCroppedCanvasTitle">截取图像</h4>
               </div>
-              <div class="modal-body">
+              <div class="modal-body" ref="canvasWrap"></div>
+			  <div class="ctrl">
+				   <div class="getsave" @click="getSave">确定</div>
+				   <div class="cancel" @click="isDroop=false">取消</div>
 			  </div>
-              <!-- <div class="modal-footer">
-                <button class="btn btn-primary" data-dismiss="modal" type="button">Close</button>
-              </div> -->
             </div>
           </div>
         </div><!-- /.modal -->
 	</section>
 </template>
 <script>
-	import '../libs/jquery.min.js'
-	import '../libs/cropper.js'
-	import '../libs/bootstrap.min.js'
+	import {mapState,mapActions} from 'vuex'
+	import Cropper from 'cropperjs'
 	import '../style/cropper.scss'
 	export default{
-		props:['aspectr'],
+		props:['aspectr','cutUrl'],
 		data(){
 			return{
-				imgCropperData: {
-					accept: 'image/gif, image/jpeg, image/png, image/bmp',
-					maxSize: 5242880,
-					file: null, //上传的文件
-					imgSrc: '', //读取的img文件base64数据流
-					imgUploadSrc: '', //裁剪之后的img文件base64数据流
-		        },
-		        imgObj: null,
-		        hasSelectImg: false,
-		        cropperLoading: false,
-		        isShort: false,
-		        result:null,
-		        options:{
-		        	dragCrop: false,
-		        	setDragMode:"move",
-		        	aspectRatio:this.aspectr,
-					crop: function (data) {
-					}
-				},
+		        cropper:'',  
+				croppable:false,  
 				isDroop:false
 			}
 		},
@@ -67,37 +49,69 @@
 			this._initCropper()
 		},
 		methods:{
+			//初始化裁剪插件
 			_initCropper(){
-				let $=jQuery;
-				let $img=jQuery(this.$refs.cutImg);
-				let result=$img.cropper(this.options)
-				let _this=this;
-				$('.save').on('click',function(){
-					let data=$(this).data();
-					_this.isDroop=true;
-					result = $img.cropper(data.method, data.option);
-					$('#getCroppedCanvasModal').find('.modal-body').html(result);
+				let img=this.$refs.cutImg
+				this.cropper=new Cropper(img,{
+					aspectRatio: this.aspectr,  
+					viewMode: 1,  
+					background:true,  
+					zoomable:false,  
+					dragMode:'move',
+					ready: function () {  
+						self.croppable = true;  
+					}  
 				})
-				$('.reset').on('click',function(){
-					$img.cropper('reset');
-				})
+			},
+			//取消
+			cancal(){
+				this.$emit('cancel')
+			},
+			//显示裁剪预览
+			showCanvas(){
+				this.isDroop=true;
+				let canvasWrap=this.$refs.canvasWrap;
+				let canvas=this.cropper.getCroppedCanvas()
+				if( canvasWrap.children.length>0 ){
+					canvasWrap.removeChild(canvasWrap.children[0])
+				}
+				canvasWrap.appendChild(canvas)
+			},
+			//保存裁剪素材
+			getSave(){
+				let canvasWrap=this.$refs.canvasWrap;
+				let canvas=canvasWrap.children[0];
+				let url=canvas.toDataURL()
+				this.$emit('setCutImage',url)
+				this.isDroop=false
+				this.$emit('cancel')
 				
+			},
+			//重置裁剪
+			reset(){
+				this.cropper.reset();
+			}
+		},
+		watch:{
+			//监听缓存图片路径如果改变则重新初始化裁剪
+			'cutUrl':function(){
+				if(this.cropper){
+					 this.cropper.replace(this.cutUrl)
+					 this.cropper.setAspectRatio(this.aspectr)
+				}
 			}
 		}
 
 	}
 </script>
 <style  lang='scss'>
-	
-
 	.layz{
-
 		position:absolute;
 		left:0;
 		right: 0;
 		top:0;
 		bottom: 0;
-		z-index:200;
+		z-index:400;
 		/**
 			** modal start
 		*/
@@ -158,6 +172,8 @@
 						padding: 30px;
 						canvas{
 							max-width:100%;
+							margin:0 auto;
+							display: block;
 						}
 						img{
 							max-width:100%;
@@ -227,5 +243,12 @@
 			margin:0 10px;
 		}
 	}
-
+	.getsave{
+		display:inline-block;
+		border:1px solid #ccc;
+		background:#090;
+		padding:15px 30px;
+		border-radius: 5px;
+		color:#fff;
+	}
 </style>
