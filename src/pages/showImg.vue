@@ -5,7 +5,7 @@
             <div class="draw-content" ref="cvs"  @click="getItems" >
                 <div class="bgImg" ref="cvsBackground"></div>
 				<div class="addText" ref="addText">
-					<div class="item-text" 
+					<input class="item-text" 
 						:class="{'chiose-text':choiseText==key}" 
 						v-for="(item,key) in data.textList" 
 						:key="key" 
@@ -13,13 +13,16 @@
 						@touchstart="getMoveText($event,item,key)"
 						@touchmove="dragText($event,item,key)"
 						@blur="endEdit($event,item,key)"
-						:ischoise="choiseText==key"
-						contenteditable='true'
 						:style="{
-							left:item.style.left+'px',
-							top:item.style.top+'px'
+							let:item.style.left,
+							top:item.style.top,
+							color:item.style.color,
+							fontSize:item.style.fontSize
 						}"
-						ref="textItems" >{{item.text}}</div>
+						:value="item.text"
+						:ischoise="choiseText==key"
+						contenteditable='plaintext-only'
+						/>
 				</div>
 				
                 <div class="avad-items" >
@@ -41,18 +44,38 @@
 		<div class="fade">
 			<canvas ref="tempCvas"></canvas>
 		</div>
-        <footer></footer>
-		<div class="titles">微调</div>
-        <div class="ctrl">
+        
+		
+		
+		<!-- 设置插入图片微调modal -->
+        <div class="ctrl" v-show="picItemCtrl">
+        	<div class="titles">微调</div>
+        	<!-- 设置文字微调modal -->
+			<div class="edit-text-ctrl" v-show="fontEdit">
+				<div class="edit-text-header">文字位置请拖动文字</div>
+				<div class="ctrl-i">
+					<div class="btn">字体+</div>
+	                <div class="value">{{computedValue.left}}</div>
+	                <div class="btn">字体-</div>
+				</div>
+				<div class="edit-text-footer">
+					<div class="change-text-color" @click="changeTextColor">修改文字颜色</div>
+	                <colorPicker 
+	                	@cancelColor="cancelColor" 
+	                	@changeColor="changeColor" 
+	                	v-show="colorWrap">
+	                </colorPicker>
+				</div>
+			</div>
             <div class="ctrl-i">
-                <div class="btn" @click="sliceLeft(-1)">左移</div>
+                <div class="btn" @click="sliceLeft(-1)">左移-</div>
                 <div class="value">{{computedValue.left}}</div>
-                <div class="btn" @click="sliceLeft(1)">右移</div>
+                <div class="btn" @click="sliceLeft(1)">右移+</div>
             </div>
             <div class="ctrl-i">
-                <div class="btn" @click="sliceTop(-1)">上移</div>
+                <div class="btn" @click="sliceTop(-1)">上移+</div>
                 <div class="value">{{computedValue.top}}</div>
-                <div class="btn" @click="sliceTop(1)">下移</div>
+                <div class="btn" @click="sliceTop(1)">下移-</div>
             </div>
             <div class="ctrl-i">
                 <div class="btn" @click="sliceSize(1,'width')">宽度+</div>
@@ -72,6 +95,15 @@
         </div>
 		<div class="saveImg" @click="addTextBtn">添加文字</div>
 		<div class="saveImg" @click="saveImage">保存</div>
+		<footer>
+			<div class="img-items">
+				<div class="img-wrap" ref="imgWrap">
+					<img v-for="(item,key) in backImages" :key="key"
+					 :src="item" alt="" ref='img1' @click="drawBgImg(item)">
+				</div>
+			</div>
+		</footer>
+	<!-- Modals -->	
         <div class="slicePic" v-show="isChange" :style="cutRect" ref="cutRectDom">
             <div class="cut" @click="cutPic">裁剪</div>
             <div class="upload" @click="uploadPic">修改图片</div>
@@ -82,7 +114,10 @@
 			<div class="chang-img-wrap">
 				<div class="wrap-body">
 					<div class="close-change" @click="closeChangeImg">关闭</div>
-					<div class="upload" @click="uploadPics">上传图片</div>
+					<div class="upload">上传图片
+						<input class="getFiles" type="file" name="" @change="getFiles" ref="uploadFiles"
+				 accept=".jpg, .jpeg, .png"  >
+					</div>
 					<div class="change" @click="changePics">修改图片</div>
 					<div class="success" @click="drawItems">确定上传</div>
 					<div class="lookload">预览</div>
@@ -90,8 +125,7 @@
 						<img :src="itemsFile" alt="" ref="readFile">
 					</div>
 				</div>
-				<input type="file" name="" @change="getFiles" ref="uploadFiles"
-				 accept=".jpg, .jpeg, .png"  style="display:none" >
+				
 			</div>
 		</div>
         
@@ -103,18 +137,14 @@
 			@setCutImage="setCutImage"
 			:cutUrl="iscutUrl"></cut>
 		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
-        <div class="img-items">
-			<div class="img-wrap" ref="imgWrap">
-				<img v-for="(item,key) in backImages" :key="key"
-				 :src="item" alt="" ref='img1' @click="drawBgImg(item)">
-			</div>
-		</div>
+        
     </section>
 </template>
 <script>
     import cut from '@/components/cut'
 	import loading from '@/components/loading'
 	import chiose from '@/components/chiose'
+	import colorPicker from '@/components/color-picker'
 	import {mapState,mapActions} from 'vuex'
     export default{
         data(){
@@ -126,6 +156,9 @@
 				iscutUrl:null,
 				choiseShow:false,
 				choiseText:null,
+				colorList:"#f00",
+				fontEdit:false,
+				picItemCtrl:false,
 				backImages:[
 					"http://localhost:8080/static/bgc/aa.png",
 					"http://localhost:8080/static/bgc/aa.png",
@@ -184,13 +217,15 @@
 				itemsFile:null,
 				textItems:null,
 				entPageY:0,
-				entPageX:0
+				entPageX:0,
+				colorWrap:false
             }
         },
         components:{
 			cut,
 			loading,
-			chiose
+			chiose,
+			colorPicker
         },
         mounted(){
 			this.initDrawView()
@@ -232,6 +267,7 @@
 						}
 					}
 				})
+				this.picItemCtrl=true;
 			},
 			isload(){
 				this.isloading=true
@@ -268,10 +304,6 @@
             uploadPic(){
 				this.isChange=false
 				this.isChangeImg=true
-			},
-			uploadPics(){
-				let uploadFiles=this.$refs.uploadFiles
-				uploadFiles.dispatchEvent(new MouseEvent('click'))
 			},
 			getFiles(){
 				let uploadFiles=this.$refs.uploadFiles
@@ -422,22 +454,27 @@
 			addTextBtn(){
 				let addText=this.$refs.addText
 				this.data.textList.push({
-					style:{},
-					text:"在此处添加文字"
+					style:{
+						left:'0px',
+						top:'0px',
+						color:'#ffff00',
+						fontSize:'24px'
+					},
+					text:"请在此输入文字"
 				})
 			},
 			getTextItems(e,item,key){
-				event.cancelBubble = true;
+				e.cancelBubble = true;
+				let cur=e.currentTarget;
 				this.choiseText=key
-				this.$refs.textItems.forEach(item=>{
-					if(item.getAttribute('ischoise')){
-						this.textItems=item
-					}
-				})
+				this.textItems=item
+				this.picItemCtrl=true
+				this.fontEdit=true
+
 			},
 			getMoveText(e,item,key){
 				let cvs=this.$refs.cvs.parentNode
-				let cur=event.currentTarget;
+				let cur=e.currentTarget;
 				this.entPageX = e.changedTouches[0].pageX - cvs.offsetLeft-cur.offsetLeft;
 				this.entPageY = e.changedTouches[0].pageY - cvs.offsetTop-cur.offsetTop;
 			},
@@ -447,22 +484,32 @@
 				let cur=e.currentTarget
 				let pageX=e.changedTouches[0].pageX-cvs.offsetLeft
 				let pageY=e.changedTouches[0].pageY-cvs.offsetTop
-				cur.style.left=(pageX-this.entPageX)+'px'
-				cur.style.top=(pageY-this.entPageY)+'px'
+				cur.style.left=parseInt(pageX-this.entPageX)+'px'
+				cur.style.top=parseInt(pageY-this.entPageY)+'px'
 				item.style.left = cur.style.left
 				item.style.top = cur.style.top
 			},
 			endDrag(e,item,key){
 				item.isDrap=false
-				
 			},
 			endEdit(e,item,key){
 				item.isDrap=false
-				// this.choiseText=null	
 				let cur=e.currentTarget
-				item.text=cur.innerHTML
-				this.textItems=cur
-				console.log(item)
+				if(cur.value==''){
+					this.data.textList.splice(key,1)	
+				}	
+				item.text=cur.value
+			},
+			changeColor(value){
+				this.colorWrap=false
+				this.textItems.style.color=value
+			},
+			cancelColor(){
+				this.colorWrap=false
+				
+			},
+			changeTextColor(){
+				this.colorWrap=true
 			}
         }     
     }
@@ -531,7 +578,12 @@
 			.item-text{
 				position: absolute;
 				display: inline-block;
-				max-width:80%;
+				width:100%;
+				font-size:32px;
+				color:#ff0;
+				background:transparent;
+				outline:none;
+				// user-modify: read-write-plaintext-only;
 			}
 		}
     }
@@ -587,17 +639,22 @@
         background:#eee;
         box-sizing: border-box;
 	}
-	.titles{
-		text-align: center;
-		padding:15px;
-		font-size:30px;
-		background:#f90;
-		margin-bottom:10px;
-	}
+	
 	.ctrl{
 		display:flex;
 		flex-wrap:wrap;
 		align-items:center;
+		margin:35px;
+		border:1px solid #ccc;
+		border-radius: 15px 15px 0 0;
+		.titles{
+			width:100%;
+			text-align: center;
+			border-bottom:1px solid #ccc;
+			padding:15px;
+			margin-bottom:15px;
+			font-size:32px;
+		}
 		.ctrl-i{
 			display: flex;
 			align-items:center;
@@ -606,18 +663,18 @@
 			margin-bottom:20px;
 			background: #fff;
 			box-sizing:border-box;
+			font-size:32px;
 			>div{
 				padding:8px 7px;
 			}
 			.btn{
-				border:1px solid #f90;
-				background: #fff;
-				cursor: pointer;
-				font-weight: 700;
+				background: #286090;
+				border-color:#204d74;
 				border-radius: 3px;
-				background:rgb(8, 187, 23);
 				color:#fff;
 				font-size:30px;
+				width:100px;
+				text-align: center;
 			}
 			.value{
 				background:#fff;
@@ -628,7 +685,7 @@
 	}
 	.slicePic{
 		position:absolute;
-		z-index:300;
+		z-index:400;
 		width:300px;
 		height:65px;
 		background:#000;
@@ -684,6 +741,17 @@
 						display: block;
 					}
 				}
+				.getFiles{
+					width:100%;
+					height:100%;
+					display:block;
+					position:absolute;
+					left:0;
+					top:0;
+					right:0;
+					bottom:0;
+					opacity:0;
+				}
 				.success{
 					margin-top:50px;
 					background:#990000;
@@ -712,5 +780,16 @@
 				}
 			}
 		}
+	}
+	.edit-text-ctrl{
+		font-size:32px;
+		width:100%;
+		text-align: center;
+	}
+	.change-text-color{
+		font-size:32px;
+		background:#f90;
+		padding:15px;
+		color:#fff;
 	}
 </style>

@@ -7,9 +7,9 @@ import axios from 'axios'
 import store from './store/store.js'
 import '@/libs/flexlib.js'
 import "@/style/comm.scss"
-import drag from '@/directive/drag'
 Vue.prototype.$http = axios
 Vue.config.productionTip = true
+
     /* eslint-disable no-new */
 new Vue({
     el: '#app',
