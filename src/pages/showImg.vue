@@ -3,7 +3,9 @@
         <header class="header">相册制作</header>
         <div class="dw-container">
             <div class="draw-content" ref="cvs"  @click="getItems" >
-                <div class="bgImg" ref="cvsBackground"></div>
+                <div class="bgImg" ref="cvsBackground">
+					<img :src="this.data.bgImg" alt="" class="fade" ref="cvsBackgroundImg">
+				</div>
 				<div class="addText" ref="addText">
 					<input class="item-text" 
 						:class="{'chiose-text':choiseText==key}" 
@@ -17,14 +19,13 @@
 							let:item.style.left,
 							top:item.style.top,
 							color:item.style.color,
-							fontSize:item.style.fontSize
+							'font-size':item.style.fontSize+'px',
+							'font-weight':item.style.fontWeight
 						}"
 						:value="item.text"
 						:ischoise="choiseText==key"
-						contenteditable='plaintext-only'
 						/>
 				</div>
-				
                 <div class="avad-items" >
                     <div class="avad-img" v-for="(item,key) in data.list" 
 					:key="key" 
@@ -35,18 +36,16 @@
 						transform:'rotate('+item.rotate+'deg)',
 						}" >
                         <div v-if="!item.pic" class="iconfont icon-jia3"></div>
-						<img style="width:100%;height:100%" :src="item.pic">
+						<img style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
                     </div>
                 </div>
             </div>
         </div>
         <div class="onlodImage fade" ref="onloadImage"></div>
-		<div class="fade">
+		<!-- canvas 画图 -->
+		<div class="">
 			<canvas ref="tempCvas"></canvas>
 		</div>
-        
-		
-		
 		<!-- 设置插入图片微调modal -->
         <div class="ctrl" v-show="picItemCtrl">
         	<div class="titles">微调</div>
@@ -54,9 +53,14 @@
 			<div class="edit-text-ctrl" v-show="fontEdit">
 				<div class="edit-text-header">文字位置请拖动文字</div>
 				<div class="ctrl-i">
-					<div class="btn">字体+</div>
-	                <div class="value">{{computedValue.left}}</div>
-	                <div class="btn">字体-</div>
+					<div class="btn" @click="setFontSize(1)">字体+</div>
+	                <div class="value">{{textItems?textItems.style.fontSize:0}}</div>
+	                <div class="btn"  @click="setFontSize(-1)">字体-</div>
+				</div>
+				<div class="ctrl-i">
+					<div class="btn" @click="setFontWeight(1)">粗体</div>
+	                <div class="value">{{textItems&&textItems.style.fontWeight==300?'细体':'粗体'}}</div>
+	                <div class="btn"  @click="setFontWeight(0)">细体</div>
 				</div>
 				<div class="edit-text-footer">
 					<div class="change-text-color" @click="changeTextColor">修改文字颜色</div>
@@ -92,6 +96,7 @@
                 <div class="value">{{computedValue.rotate}}</div>
                 <div class="btn" @click="changRoate(1)">旋转-</div>
             </div>
+			<div class="coloseCtrl" @click="closeCtrl">关闭控制台</div>
         </div>
 		<div class="saveImg" @click="addTextBtn">添加文字</div>
 		<div class="saveImg" @click="saveImage">保存</div>
@@ -128,16 +133,17 @@
 				
 			</div>
 		</div>
-        
+		<!-- loading -->
         <loading v-show="isloading"></loading>
+		<!-- 裁剪组件 -->
         <cut :aspectr="ratio" :class="isCut?'show':'hidden'" 
 			@cancel="cancel" 
 			@isload="isload"
 			@closeload="closeload"
 			@setCutImage="setCutImage"
 			:cutUrl="iscutUrl"></cut>
+		<!-- 修改图片组件 -->
 		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
-        
     </section>
 </template>
 <script>
@@ -145,6 +151,7 @@
 	import loading from '@/components/loading'
 	import chiose from '@/components/chiose'
 	import colorPicker from '@/components/color-picker'
+	import drawcvs from '@/mixins/draw-cvs'
 	import {mapState,mapActions} from 'vuex'
     export default{
         data(){
@@ -220,7 +227,7 @@
 				entPageX:0,
 				colorWrap:false
             }
-        },
+		},
         components:{
 			cut,
 			loading,
@@ -238,7 +245,8 @@
             initDrawView(){
                 //初始化画布大小
 				this.cvs=this.$refs.cvs;
-                this.cvs.style.height=parseInt(this.cvs.clientWidth/this.cvsRatio)+'px'
+				this.cvs.style.height=parseInt(this.cvs.clientWidth/this.cvsRatio)+'px'
+				
                 let imgwrap=this.$refs.imgWrap
 	        	let children=imgwrap.children
 				imgwrap.style.width=(children[0].clientWidth+10)*children.length+'rem'
@@ -285,21 +293,32 @@
         	},
 			//保存成图片
             saveImage(){
-		    	var image = new Image()
-		    	var data = this.cvs.toDataURL("image/png")
-				var file = new FormData()
-                file.append('file', data)
-                this.$http.post('/api/upbob',file,{
-						headers:{'Content-Type':'multipart/form-data'}
-					}
-				)
-				.then(function(res){
-					console.log(res)
-				})
-				.catch(function(er){
-					console.log(er)	
-				})
-				return image
+				let canvas=this.$refs.tempCvas
+				let drawBox=this.$refs.cvs
+				let drawBoxWidth=drawBox.clientWidth;
+				let drawBoxHeight=drawBoxWidth/this.cvsRatio;
+				canvas.width=drawBoxWidth
+				canvas.height=drawBoxHeight
+				let drawData=this.data
+				let avadList=this.$refs.avadList
+				let cvsBackgroundImg=this.$refs.cvsBackgroundImg
+				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
+				// drawcvs.draw(drawData)
+		    	// var image = new Image()
+		    	// var data = this.cvs.toDataURL("image/png")
+				// var file = new FormData()
+                // file.append('file', data)
+                // this.$http.post('/api/upbob',file,{
+				// 		headers:{'Content-Type':'multipart/form-data'}
+				// 	}
+				// )
+				// .then(function(res){
+				// 	console.log(res)
+				// })
+				// .catch(function(er){
+				// 	console.log(er)	
+				// })
+				// return image
 		    },
             uploadPic(){
 				this.isChange=false
@@ -458,7 +477,8 @@
 						left:'0px',
 						top:'0px',
 						color:'#ffff00',
-						fontSize:'24px'
+						fontSize:24,
+						fontWeight:300
 					},
 					text:"请在此输入文字"
 				})
@@ -470,7 +490,6 @@
 				this.textItems=item
 				this.picItemCtrl=true
 				this.fontEdit=true
-
 			},
 			getMoveText(e,item,key){
 				let cvs=this.$refs.cvs.parentNode
@@ -496,27 +515,41 @@
 				item.isDrap=false
 				let cur=e.currentTarget
 				if(cur.value==''){
-					this.data.textList.splice(key,1)	
-				}	
+					this.data.textList.splice(key,1)
+					this.textItems=null;	
+				}
 				item.text=cur.value
 			},
 			changeColor(value){
 				this.colorWrap=false
+				if(!this.textItems) return
 				this.textItems.style.color=value
 			},
 			cancelColor(){
 				this.colorWrap=false
-				
 			},
 			changeTextColor(){
 				this.colorWrap=true
+			},
+			setFontSize(value){
+				this.textItems.style.fontSize=parseInt(this.textItems.style.fontSize)+value
+			},
+			setFontWeight(value){
+				if(value ){
+					this.textItems.style.fontWeight=700
+				}else{
+					this.textItems.style.fontWeight=300
+				}
+			},
+			closeCtrl(){
+				this.picItemCtrl=false
 			}
         }     
     }
 </script>
 <style lang="scss" scoped>
 	.chiose-text{
-		border:2px dashed #f90;
+		border:2px dashed #f90 !important;
 		box-sizing: border-box;
 	}
 	.header{
@@ -583,6 +616,7 @@
 				color:#ff0;
 				background:transparent;
 				outline:none;
+				border:none;
 				// user-modify: read-write-plaintext-only;
 			}
 		}
@@ -646,14 +680,17 @@
 		align-items:center;
 		margin:35px;
 		border:1px solid #ccc;
-		border-radius: 15px 15px 0 0;
+		border-radius: 4px 4px 0 0;
 		.titles{
 			width:100%;
 			text-align: center;
 			border-bottom:1px solid #ccc;
 			padding:15px;
-			margin-bottom:15px;
 			font-size:32px;
+			background:#286090;
+			color:#fff;
+			border-color: #204d74;
+			margin-bottom:15px;
 		}
 		.ctrl-i{
 			display: flex;
@@ -681,6 +718,14 @@
 				width:70px;
 				text-align: center;
 			}
+		}
+		.coloseCtrl{
+			color:#fff;
+			background:#f90;
+			width:100%;
+			text-align: center;
+			padding:15px 0;
+			font-size:32px;
 		}
 	}
 	.slicePic{
@@ -778,6 +823,7 @@
 					right:10px;
 					top:10px;
 				}
+				
 			}
 		}
 	}
@@ -785,11 +831,26 @@
 		font-size:32px;
 		width:100%;
 		text-align: center;
+		display:flex;
+		flex-wrap: wrap;
+		.edit-text-footer{
+			width:100%;
+		}
+		.change-text-color{
+			font-size:32px;
+			background:#f90;
+			padding:15px;
+			color:#fff;
+			margin-bottom: 10px;
+		}
+		.edit-text-header{
+			font-size:32px;
+			background:#f90;
+			padding:15px;
+			color:#fff;
+			width:100%;
+			margin-bottom: 10px;
+		}
 	}
-	.change-text-color{
-		font-size:32px;
-		background:#f90;
-		padding:15px;
-		color:#fff;
-	}
+	
 </style>
