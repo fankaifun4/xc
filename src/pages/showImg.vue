@@ -194,32 +194,42 @@
 				//加载相册模板列表
 				tempData:[{
 					//背景
-					bgImg:"http://localhost:8080/static/bgc/aa.png",
+					bgImg:"static/bgc/aa.png",
 					//列表单个ID
 					id:"img_list_0",
 					//文字数据
-					textList:[{
-						text:"输入的文字",
-						//所有数据为实数
-						style:{
-							left:'0px',
-							top:'0px',
-							color:'#ffff00',
-							fontSize:24,
-							fontWeight:300
-						}
-					}],
+					textList:[],
 					//相片元素数据
 					//除了opcity,rotate为实数，其他都为百分比
 					list:[{
-						width:80,
-						height:80,
-						top:0,
-						left:0,
+						width:40,
+						height:30,
+						top:10,
+						left:10,
 						rotate:0,
 						id:'imageone',
 						opcity:1,
-						pic:"http://localhost:8080/static/bgc/1.jpg",
+						pic:"static/bgc/1.jpg",
+						aspectRatio:4/3,
+					},{
+						width:30,
+						height:60,
+						top:15,
+						left:60,
+						rotate:0,
+						id:'imagetwo',
+						opcity:1,
+						pic:"static/bgc/2.jpg",
+						aspectRatio:4/3,
+					},{
+						width:30,
+						height:25,
+						top:60,
+						left:20,
+						rotate:0,
+						id:'imagethree',
+						opcity:1,
+						pic:"static/bgc/3.jpg",
 						aspectRatio:4/3,
 					}],
 					
@@ -303,12 +313,12 @@
 			},
 			//获取当前图像载体
 			getItems(e){
-				let cx=e.pageX-this.cvs.offsetLeft
-                let cy=e.pageY-this.cvs.offsetTop
+				let cx=e.pageX-this.cvs.parentNode.offsetLeft
+                let cy=e.pageY-this.cvs.parentNode.offsetTop
 				let cutRectDom=this.$refs.cutRectDom
 				this.data.list.forEach((item,index)=>{
 					let p=this.getPosition(item)
-					if( cx>=p.l && cx<=p.l+p.w && cy>=p.t&& cy<=p.t+p.h ){
+					if( cx>=p.l && cy>=p.t && cx<=p.l+p.w && cy<=p.t+p.h ){
 						this.current=item
 						this.computPX(this.current)
 						this.isChange=!this.isChange
@@ -348,9 +358,9 @@
 				let drawData=this.data
 				let avadList=this.$refs.avadList
 				let cvsBackgroundImg=this.$refs.cvsBackgroundImg
-				this.previewCVS=true;
-				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
 				
+				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
+				this.previewCVS=true;
 				// /api/upbob
 				// let ImgBase64=canvas.toDataURL("image/png")
 				// let image=new Image()
@@ -635,6 +645,7 @@
     }
 </script>
 <style lang="scss" scoped>
+	@import "../style/swiper.scss";
 	@import "../style/modal.scss";
 	.chiose-text{
 		border:2px dashed #f90 !important;
@@ -841,7 +852,7 @@
 		}
 	}
 	.changeImg{
-		position: absolute;
+		position: fixed;
 		z-index:400;
 		left: 0;
 		top:0;

@@ -3,7 +3,6 @@
       <header @click="goPath">
           添加完成
       </header>
-      upload
   </div>
 </template>
 <script>
