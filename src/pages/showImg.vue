@@ -160,9 +160,7 @@
 			@setCutImage="setCutImage"
 			:cutUrl="iscutUrl"></cut>
 		<!-- 修改图片组件 -->
-		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" >
-			
-		</chiose>
+		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
     </section>
 </template>
 <script>
@@ -638,7 +636,6 @@
 </script>
 <style lang="scss" scoped>
 	@import "../style/modal.scss";
-	@import "../style/swiper.scss";
 	.chiose-text{
 		border:2px dashed #f90 !important;
 		box-sizing: border-box;
