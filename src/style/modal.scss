@@ -1,0 +1,59 @@
+.preview-wrap{
+	position:fixed;
+	width:100%;
+	height:100%;
+	left:0;
+	top:0;
+	bottom:0;
+	right:0;
+	z-index:600;
+	background: rgba(0,0,0,.5);
+	.preview-cont{
+		position:relative;
+		width:100%;
+		height:100%;
+		.preview-bg{
+			background:#fff;
+			margin:15px;
+			margin-top:150px;
+			.saveOverPic{
+				display:flex;
+				align-items:center;
+				justify-content:center;
+				padding:15px;
+				>.save-in-tpl{
+					padding:15px 30px;
+					color:#fff;
+					background:#690;
+					font-size:32px;
+				}
+			}
+		}
+		.preview-header{
+			border-bottom:1px solid #ccc;
+			text-align: center;	
+			font-size: 32px;
+			font-weight: 800;
+			padding:15px 0;
+			position:relative;
+			margin:0 10px;
+			.close{
+				position: absolute;
+				right:0;
+				top:0;
+				padding:10px;
+				font-size: 32px;
+				background:transparent;
+				border:none;
+				outline: none;
+			}
+		}
+		.preview-body{
+			padding:15px;
+			>canvas{
+				width:100%;
+			}
+		}
+
+	}
+}

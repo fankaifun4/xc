@@ -4,7 +4,7 @@
         <div class="dw-container">
             <div class="draw-content" ref="cvs"  @click="getItems" >
                 <div class="bgImg" ref="cvsBackground">
-					<img :src="this.data.bgImg" alt="" class="fade" ref="cvsBackgroundImg">
+					<img :src="data.bgImg" alt="" class="fade" ref="cvsBackgroundImg">
 				</div>
 				<div class="addText" ref="addText">
 					<input class="item-text" 
@@ -16,8 +16,8 @@
 						@touchmove="dragText($event,item,key)"
 						@blur="endEdit($event,item,key)"
 						:style="{
-							let:item.style.left,
 							top:item.style.top,
+							left:item.style.left,
 							color:item.style.color,
 							'font-size':item.style.fontSize+'px',
 							'font-weight':item.style.fontWeight
@@ -42,9 +42,21 @@
             </div>
         </div>
         <div class="onlodImage fade" ref="onloadImage"></div>
-		<!-- canvas 画图 -->
-		<div class="">
-			<canvas ref="tempCvas"></canvas>
+		<!-- canvas 预览 画图 -->
+		<div class="preview-wrap" v-show="previewCVS">
+			<div class='preview-cont'>
+				<div class="preview-bg">
+					<div class="preview-header">预览
+						<input type="button" value="X" @click="previewCVS=false" class="close" name="">
+					</div>
+					<div class="preview-body">
+						<canvas ref="tempCvas"></canvas>
+					</div>
+					<div class="saveOverPic">
+						<div class="save-in-tpl" @click="saveToTpl">确定保存</div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<!-- 设置插入图片微调modal -->
         <div class="ctrl" v-show="picItemCtrl">
@@ -99,12 +111,17 @@
 			<div class="coloseCtrl" @click="closeCtrl">关闭控制台</div>
         </div>
 		<div class="saveImg" @click="addTextBtn">添加文字</div>
-		<div class="saveImg" @click="saveImage">保存</div>
+		<div class="saveImg" @click="preview">预览高清</div>
 		<footer>
 			<div class="img-items">
-				<div class="img-wrap" ref="imgWrap">
-					<img v-for="(item,key) in backImages" :key="key"
-					 :src="item" alt="" ref='img1' @click="drawBgImg(item)">
+				<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
+					<div class="swiper-wrapper">
+						<div class="swiper-slide" v-for="(item,key) in tempData" :key="key">
+							<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item)">
+						</div>
+					</div>
+					<!-- Add Pagination -->
+        			<div class="swiper-pagination"></div>
 				</div>
 			</div>
 		</footer>
@@ -126,7 +143,7 @@
 					<div class="change" @click="changePics">修改图片</div>
 					<div class="success" @click="drawItems">确定上传</div>
 					<div class="lookload">预览</div>
-					<div class="readerImg">
+					<div class="readerImg ">
 						<img :src="itemsFile" alt="" ref="readFile">
 					</div>
 				</div>
@@ -143,7 +160,9 @@
 			@setCutImage="setCutImage"
 			:cutUrl="iscutUrl"></cut>
 		<!-- 修改图片组件 -->
-		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
+		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" >
+			
+		</chiose>
     </section>
 </template>
 <script>
@@ -152,60 +171,78 @@
 	import chiose from '@/components/chiose'
 	import colorPicker from '@/components/color-picker'
 	import drawcvs from '@/mixins/draw-cvs'
+	import Swiper from 'swiper'
+	
 	import {mapState,mapActions} from 'vuex'
     export default{
         data(){
             return{
                 name:'showIndex',
+                //loading 开关
                 isloading:false,
+                //裁剪开关
                 isCut:false,
+                //裁剪的比例 16:9·4:3··
 				ratio:1.777,
 				iscutUrl:null,
+				//选择图片开关
 				choiseShow:false,
+				//修改文字数组的健值
 				choiseText:null,
-				colorList:"#f00",
+				//编辑文字控制器开关
 				fontEdit:false,
+				//编辑图片元素控制器开关
 				picItemCtrl:false,
-				backImages:[
-					"http://localhost:8080/static/bgc/aa.png",
-					"http://localhost:8080/static/bgc/aa.png",
-					"http://localhost:8080/static/bgc/aa.png"
-				],
-                data:{
+				//加载相册模板列表
+				tempData:[{
 					bgImg:"http://localhost:8080/static/bgc/aa.png",
 					textList:[],
 					list:[{
-						width:60,
-						height:50,
-						top:10,
-						left:10,
+						width:80,
+						height:80,
+						top:0,
+						left:0,
 						rotate:0,
 						id:'imageone',
 						opcity:1,
 						pic:"http://localhost:8080/static/bgc/1.jpg",
 						aspectRatio:4/3,
-					},{
-						width:30,
-						height:70,
-						top:15,
-						left:65,
-						rotate:15,
-						id:'imagetwo',
-						opcity:1,
-						pic:"http://localhost:8080/static/bgc/2.jpg",
-						aspectRatio:9/16,
-					},{
-						width:40,
-						height:40,
-						top:58,
-						left:12,
+					}],
+					id:"img_list_0"
+				},{
+					bgImg:"http://localhost:8080/static/bgc/aa.png",
+					textList:[],
+					list:[{
+						width:60,
+						height:50,
+						top:0,
+						left:0,
 						rotate:0,
 						id:'imagethree',
 						opcity:1,
-						pic:"",
-						aspectRatio:16/9,
-					}]
-				},
+						pic:"http://localhost:8080/static/bgc/2.jpg",
+						aspectRatio:4/3,
+					}],
+					id:"img_list_2"
+				},{
+					bgImg:"http://localhost:8080/static/bgc/aa.png",
+					textList:[],
+					list:[{
+						width:60,
+						height:50,
+						top:0,
+						left:0,
+						rotate:0,
+						id:'imagefour',
+						opcity:1,
+						pic:"http://localhost:8080/static/bgc/3.jpg",
+						aspectRatio:4/3,
+					}],
+					id:"img_list_3"
+				}],
+				//当前编辑的相片
+                data:{},
+                //计算长宽高偏移量控制台算数表达
                 computedValue:{
                     width:0,
                     height:0,
@@ -214,18 +251,30 @@
                     opcity:1,
                     rotate:0
                 },
+                //裁剪，修改，删除，小控件开关
                 isChange:false,
+                //裁剪，修改，删除，小控件位置
                 cutRect:{},
-                bgImg:null,
+                //编辑区视图
                 cvs:null,
+                //当前选择的相册元素
                 current:null,
+                //主视图比例
 				cvsRatio:10/7,
+				//修改上传组件开关
 				isChangeImg:false,
+				//缓存上传base64url
 				itemsFile:null,
+				//当前编辑的文字缓存
 				textItems:null,
+				//移动文字初始位置X
 				entPageY:0,
+				//移动文字初始位置Y
 				entPageX:0,
-				colorWrap:false
+				//颜色编辑器开关
+				colorWrap:false,
+				//预览canvas
+				previewCVS:false
             }
 		},
         components:{
@@ -236,23 +285,33 @@
         },
         mounted(){
 			this.initDrawView()
+		    var swiper = new Swiper('.swiper-container', {
+		        pagination: '.swiper-pagination',
+		        slidesPerView: 3,
+		        paginationClickable: true,
+		        spaceBetween: 15,
+		        paginationType: 'fraction',
+		        preloadImages: true,
+		        observer:true,
+		    });
         },
         computed:{
 			...mapState(['imgId','imgUrl','imglist']),
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+        	//初始化
             initDrawView(){
                 //初始化画布大小
 				this.cvs=this.$refs.cvs;
+				if(this.tempData.length>0){
+					this.data=this.tempData[0]
+				}
 				this.cvs.style.height=parseInt(this.cvs.clientWidth/this.cvsRatio)+'px'
-				
-                let imgwrap=this.$refs.imgWrap
-	        	let children=imgwrap.children
-				imgwrap.style.width=(children[0].clientWidth+10)*children.length+'rem'
 				let cvsBackground=this.$refs.cvsBackground
 				cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
-				cvsBackground.style.backgroundSize="100%"
+				cvsBackground.style.backgroundSize="100%";
+				
 			},
 			//获取修改传过来的url
 			getChoiseImg(url){
@@ -277,9 +336,11 @@
 				})
 				this.picItemCtrl=true;
 			},
+			//loading start
 			isload(){
 				this.isloading=true
 			},
+			//loading end
 			closeload(){
 				this.isloading=false
 			},
@@ -287,12 +348,13 @@
 			setCutImage(base64Url){
 				this.current.pic=base64Url
 			},
+			//关闭修改图片组件
 			closeChangeImg(){
 				this.isChange=false
         		this.isChangeImg=false
         	},
 			//保存成图片
-            saveImage(){
+            preview(){
 				let canvas=this.$refs.tempCvas
 				let drawBox=this.$refs.cvs
 				let drawBoxWidth=drawBox.clientWidth;
@@ -301,8 +363,21 @@
 				canvas.height=drawBoxHeight
 				let drawData=this.data
 				let avadList=this.$refs.avadList
+				
 				let cvsBackgroundImg=this.$refs.cvsBackgroundImg
 				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
+				this.previewCVS=true;
+				// /api/upbob
+				// let ImgBase64=canvas.toDataURL("image/png")
+				// let image=new Image()
+				// image.src=ImgBase64
+				// if(image.complete){
+				// 	console.log(image.width,image.height)
+				// 	return
+				// }
+				// image.onload=function(){
+				// 	console.log(image.width,image.height)
+				// }
 				// drawcvs.draw(drawData)
 		    	// var image = new Image()
 		    	// var data = this.cvs.toDataURL("image/png")
@@ -324,6 +399,7 @@
 				this.isChange=false
 				this.isChangeImg=true
 			},
+			//获取上传图片blob
 			getFiles(){
 				let uploadFiles=this.$refs.uploadFiles
 				let fs=new FileReader()
@@ -337,9 +413,11 @@
 				this.isChangeImg=false
 				this.choiseShow=true
 			},
+			//打开修改图片组件
 			getChoiseImghidden(){
 				this.choiseShow=false
 			},
+			//打开裁剪图片组件
             cutPic(){
 				let cur=this.current
 				let cvs=this.$refs.tempCvas
@@ -353,12 +431,14 @@
 				this.isCut=true
 				this.isChange=false
 			},
+			//删除图片
 			deletePic(){
 				let cur=this.current
 				if( !cur.pic ) return
 				cur.pic=""
 				this.isChange=false
 			},
+			//关闭裁剪
             cancel(){
 				this.isCut=false
             },
@@ -406,13 +486,15 @@
 			sliceTop(value){
 				this.changePosition(value,'top')			
             },
+            //修改旋转角度
             changRoate(value){
                 this.changePosition(value,'rotate')
 			},
 			//修改大小
 			sliceSize(value,name){
+				if( !this.current) return 
 				if( !this.current.pic ) return
-				if( this.current ===null){ return }
+				
 				let cur=this.current
 				let p=this.getPosition(cur)
                 this.computPX(cur)
@@ -426,17 +508,14 @@
 					top:p.t+'px'
 				}
             },
-            //插入空占位图
-			insertPic(data){
-				let p=this.getPosition(data)
-                this.computPX(data)
-			},
-			drawBgImg(url){
-				this.data.bgImg=url
+			//主操作区添加背景图片
+			drawBgImg(model){
+				this.data=model
 				let cvsBackground=this.$refs.cvsBackground
 				cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
 				cvsBackground.style.backgroundSize="100%"
 			},
+			//上传图片
 			drawItems(){
 				let _this=this
 				let cur=this.current
@@ -470,6 +549,7 @@
 					_this.isloading=false
 				})
 			},
+			//添加文字
 			addTextBtn(){
 				let addText=this.$refs.addText
 				this.data.textList.push({
@@ -483,6 +563,7 @@
 					text:"请在此输入文字"
 				})
 			},
+			//获取文字域
 			getTextItems(e,item,key){
 				e.cancelBubble = true;
 				let cur=e.currentTarget;
@@ -491,12 +572,14 @@
 				this.picItemCtrl=true
 				this.fontEdit=true
 			},
+			//获取文字初始位置
 			getMoveText(e,item,key){
 				let cvs=this.$refs.cvs.parentNode
 				let cur=e.currentTarget;
 				this.entPageX = e.changedTouches[0].pageX - cvs.offsetLeft-cur.offsetLeft;
 				this.entPageY = e.changedTouches[0].pageY - cvs.offsetTop-cur.offsetTop;
 			},
+			//移动文字
 			dragText(e,item,key){
 				e.preventDefault(); 
 				let cvs=this.$refs.cvs.parentNode
@@ -508,9 +591,7 @@
 				item.style.left = cur.style.left
 				item.style.top = cur.style.top
 			},
-			endDrag(e,item,key){
-				item.isDrap=false
-			},
+			//编辑完成
 			endEdit(e,item,key){
 				item.isDrap=false
 				let cur=e.currentTarget
@@ -520,20 +601,25 @@
 				}
 				item.text=cur.value
 			},
+			//修改颜色
 			changeColor(value){
 				this.colorWrap=false
 				if(!this.textItems) return
 				this.textItems.style.color=value
 			},
+			//关闭颜色组件
 			cancelColor(){
 				this.colorWrap=false
 			},
+			//打开颜色组件开关
 			changeTextColor(){
 				this.colorWrap=true
 			},
+			//设置文字大小
 			setFontSize(value){
 				this.textItems.style.fontSize=parseInt(this.textItems.style.fontSize)+value
 			},
+			//设置文字字体粗细
 			setFontWeight(value){
 				if(value ){
 					this.textItems.style.fontWeight=700
@@ -541,13 +627,32 @@
 					this.textItems.style.fontWeight=300
 				}
 			},
+			//关闭控制台
 			closeCtrl(){
 				this.picItemCtrl=false
+			},
+			//保存到相册列表视图
+			saveToTpl(){
+				let cvs=this.$refs.tempCvas;
+				let ctx=cvs.getContext('2d')
+				if(!this.data.id) return
+				let temp_bg=this.$refs.temp_bg_elemts
+				let DataId=this.data.id
+				let base64Data=cvs.toDataURL('image/png')
+				if(temp_bg.length>0){
+					temp_bg.forEach(item=>{
+						if( item.id== DataId){
+							item.src=base64Data
+						}
+					})
+				}
 			}
         }     
     }
 </script>
 <style lang="scss" scoped>
+	@import "../style/modal.scss";
+	@import "../style/swiper.scss";
 	.chiose-text{
 		border:2px dashed #f90 !important;
 		box-sizing: border-box;
@@ -644,16 +749,17 @@
 	.img-items{
 		height:240px;
 		bottom: 20px;
-		overflow-x:auto;
-		overflow-y:hidden;
 		.img-wrap{
+			.swiper-pagination{
+				background: rgba(0,0,0,.5);
+				color:#fff;
+			}
 			img{
 				border:1px solid #ccc;
 				padding:10px;
-				float: left;
-				width:240px;
+				width:100%;
 				display: block;
-				margin:0 10px;
+				box-sizing:border-box;
 			}
 		}
 	}

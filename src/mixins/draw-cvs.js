@@ -2,16 +2,22 @@ export default {
     avadItem: [],
     tempImg: [],
     listImg: [],
+    textList:[],
     cvs: null,
     ctx: null,
     bckground: null,
     init(cvs, imglist, bg, data) {
         //存入数据
+        //初始化需要画的图片元素列表
+        this.avadItem= []
+        this.tempImg= []
+        this.listImg= []
+        this.textList=[]
         this.cvs = cvs
         this.bckground = bg
+        this.textList=data.textList
         this.ctx = this.cvs.getContext('2d')
-        this.cvs.style.border = "2px solid #f00"
-        this.cvs.style['box-sizing'] = 'border-box'
+        this.ctx.clearRect(0,0,this.cvs.width,this.cvs.height)
         let cvsHeight = cvs.height
         let cvsWidth = cvs.width
         let templObj = {}
@@ -38,6 +44,7 @@ export default {
             //开始画图
         this.initDraw()
     },
+    //画元素
     drawAVAD(item) {
         this.ctx.beginPath()
         this.ctx.save()
@@ -51,16 +58,26 @@ export default {
         this.ctx.drawImage(item.img, rx, ry, item.width, item.height)
         this.ctx.restore();
     },
+    //背景
     drawBG() {
+        this.ctx.beginPath()
+        this.ctx.translate(0, 0)
+        this.ctx.drawImage(this.bckground, 0, 0, this.cvs.width, this.cvs.height)
+    },
+    //文字
+    drawText(item) {
         this.ctx.beginPath()
         this.ctx.save()
         this.ctx.translate(0, 0)
-        this.ctx.drawImage(this.bckground, 0, 0, this.cvs.width, this.cvs.height)
+        this.ctx.textBaseline = 'hanging'
+        this.ctx.fillStyle=item.style.color
+        this.ctx.font=item.style.fontWeight +' '+ item.style.fontSize + 'px' +' '+ '微软雅黑'
+        let x=item.style.left.replace(/px/,'')
+        let y=item.style.top.replace(/px/,'')
+        this.ctx.fillText(item.text,x,y)
         this.ctx.restore();
     },
-    drawText() {
-
-    },
+    //开始画图
     initDraw() {
         let empty = []
         this.listImg.forEach(item => {
@@ -69,9 +86,14 @@ export default {
             }
         })
         this.avadItem = empty
+        this.ctx.clearRect(0,0,this.cvs.width,this.cvs.height)
         this.avadItem.forEach(item => {
             this.drawAVAD(item)
         })
         this.drawBG()
+        this.textList.forEach(item=>{
+            this.drawText(item)
+        })
+        
     }
 }
