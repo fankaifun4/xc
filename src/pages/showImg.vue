@@ -112,7 +112,7 @@
         </div>
 		<div class="saveImg" @click="addTextBtn">添加文字</div>
 		<div class="saveImg" @click="preview">预览高清</div>
-		<footer>
+		<footer class="footer">
 			<div class="img-items">
 				<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
 					<div class="swiper-wrapper">
@@ -195,8 +195,24 @@
 				picItemCtrl:false,
 				//加载相册模板列表
 				tempData:[{
+					//背景
 					bgImg:"http://localhost:8080/static/bgc/aa.png",
-					textList:[],
+					//列表单个ID
+					id:"img_list_0",
+					//文字数据
+					textList:[{
+						text:"输入的文字",
+						//所有数据为实数
+						style:{
+							left:'0px',
+							top:'0px',
+							color:'#ffff00',
+							fontSize:24,
+							fontWeight:300
+						}
+					}],
+					//相片元素数据
+					//除了opcity,rotate为实数，其他都为百分比
 					list:[{
 						width:80,
 						height:80,
@@ -208,37 +224,7 @@
 						pic:"http://localhost:8080/static/bgc/1.jpg",
 						aspectRatio:4/3,
 					}],
-					id:"img_list_0"
-				},{
-					bgImg:"http://localhost:8080/static/bgc/aa.png",
-					textList:[],
-					list:[{
-						width:60,
-						height:50,
-						top:0,
-						left:0,
-						rotate:0,
-						id:'imagethree',
-						opcity:1,
-						pic:"http://localhost:8080/static/bgc/2.jpg",
-						aspectRatio:4/3,
-					}],
-					id:"img_list_2"
-				},{
-					bgImg:"http://localhost:8080/static/bgc/aa.png",
-					textList:[],
-					list:[{
-						width:60,
-						height:50,
-						top:0,
-						left:0,
-						rotate:0,
-						id:'imagefour',
-						opcity:1,
-						pic:"http://localhost:8080/static/bgc/3.jpg",
-						aspectRatio:4/3,
-					}],
-					id:"img_list_3"
+					
 				}],
 				//当前编辑的相片
                 data:{},
@@ -363,10 +349,10 @@
 				canvas.height=drawBoxHeight
 				let drawData=this.data
 				let avadList=this.$refs.avadList
-				
 				let cvsBackgroundImg=this.$refs.cvsBackgroundImg
-				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
 				this.previewCVS=true;
+				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
+				
 				// /api/upbob
 				// let ImgBase64=canvas.toDataURL("image/png")
 				// let image=new Image()
@@ -957,6 +943,9 @@
 			width:100%;
 			margin-bottom: 10px;
 		}
+	}
+	.footer{
+		margin-top:30px;
 	}
 	
 </style>

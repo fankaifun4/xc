@@ -63,6 +63,7 @@ export default {
         this.ctx.beginPath()
         this.ctx.translate(0, 0)
         this.ctx.drawImage(this.bckground, 0, 0, this.cvs.width, this.cvs.height)
+         return this;
     },
     //文字
     drawText(item) {
@@ -76,6 +77,7 @@ export default {
         let y=item.style.top.replace(/px/,'')
         this.ctx.fillText(item.text,x,y)
         this.ctx.restore();
+        return this;
     },
     //开始画图
     initDraw() {
@@ -94,6 +96,6 @@ export default {
         this.textList.forEach(item=>{
             this.drawText(item)
         })
-        
+        return this;
     }
 }
