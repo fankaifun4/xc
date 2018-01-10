@@ -1,8 +1,14 @@
 <template>
   <div>
-      <header @click="goPath">
-          添加完成
+      <header>
+          管理
       </header>
+      <section>
+        
+      </section>
+      <footer>
+        
+      </footer>
   </div>
 </template>
 <script>

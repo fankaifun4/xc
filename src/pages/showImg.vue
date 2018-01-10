@@ -60,7 +60,10 @@
 		</div>
 		<!-- 设置插入图片微调modal -->
         <div class="ctrl" v-show="picItemCtrl">
-        	<div class="titles">微调</div>
+        	<div class="titles">
+        		<span>微调</span>
+        		<div class="coloseCtrl" @click="closeCtrl">x</div>
+        	</div>
         	<!-- 设置文字微调modal -->
 			<div class="edit-text-ctrl" v-show="fontEdit">
 				<div class="edit-text-header">文字位置请拖动文字</div>
@@ -108,7 +111,7 @@
                 <div class="value">{{computedValue.rotate}}</div>
                 <div class="btn" @click="changRoate(1)">旋转-</div>
             </div>
-			<div class="coloseCtrl" @click="closeCtrl">关闭控制台</div>
+			
         </div>
 		<div class="saveImg" @click="addTextBtn">添加文字</div>
 		<div class="saveImg" @click="preview">预览高清</div>
@@ -182,6 +185,7 @@
                 isCut:false,
                 //裁剪的比例 16:9·4:3··
 				ratio:1.777,
+				//裁剪的图片Url
 				iscutUrl:null,
 				//选择图片开关
 				choiseShow:false,
@@ -197,6 +201,8 @@
 					bgImg:"static/bgc/aa.png",
 					//列表单个ID
 					id:"img_list_0",
+					//主视图比例
+					cvsRatio:10/7,
 					//文字数据
 					textList:[],
 					//相片元素数据
@@ -210,7 +216,7 @@
 						id:'imageone',
 						opcity:1,
 						pic:"static/bgc/1.jpg",
-						aspectRatio:4/3,
+						aspectRatio:9/3,
 					},{
 						width:30,
 						height:60,
@@ -220,16 +226,6 @@
 						id:'imagetwo',
 						opcity:1,
 						pic:"static/bgc/2.jpg",
-						aspectRatio:4/3,
-					},{
-						width:30,
-						height:25,
-						top:60,
-						left:20,
-						rotate:0,
-						id:'imagethree',
-						opcity:1,
-						pic:"static/bgc/3.jpg",
 						aspectRatio:4/3,
 					}],
 					
@@ -253,8 +249,7 @@
                 cvs:null,
                 //当前选择的相册元素
                 current:null,
-                //主视图比例
-				cvsRatio:10/7,
+                
 				//修改上传组件开关
 				isChangeImg:false,
 				//缓存上传base64url
@@ -301,7 +296,7 @@
 				if(this.tempData.length>0){
 					this.data=this.tempData[0]
 				}
-				this.cvs.style.height=parseInt(this.cvs.clientWidth/this.cvsRatio)+'px'
+				this.cvs.style.height=parseInt(this.cvs.clientWidth/this.data.cvsRatio)+'px'
 				let cvsBackground=this.$refs.cvsBackground
 				cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
 				cvsBackground.style.backgroundSize="100%";
@@ -352,7 +347,7 @@
 				let canvas=this.$refs.tempCvas
 				let drawBox=this.$refs.cvs
 				let drawBoxWidth=drawBox.clientWidth;
-				let drawBoxHeight=drawBoxWidth/this.cvsRatio;
+				let drawBoxHeight=drawBoxWidth/this.data.cvsRatio;
 				canvas.width=drawBoxWidth
 				canvas.height=drawBoxHeight
 				let drawData=this.data
@@ -652,10 +647,9 @@
 		box-sizing: border-box;
 	}
 	.header{
-		padding:10px 15px;
+		padding:20px 15px;
 		font-size:34px;
 		text-align: center;
-		margin-bottom:20px;
 	}
     .container{
         width:100%;
@@ -663,7 +657,7 @@
     }
     .dw-container{
         width:100%;
-        border:2px dashed rgb(21, 194, 6);
+        border:1px dashed rgb(21, 194, 6);
         box-sizing: border-box;
         background:#fff;
         position:relative;
@@ -791,6 +785,18 @@
 			color:#fff;
 			border-color: #204d74;
 			margin-bottom:15px;
+			position:relative;
+			.coloseCtrl{
+				color:#fff;
+				background:transparent;
+				text-align: center;
+				padding:0 15px;
+				font-size:32px;
+				position:absolute;
+				display:inline-block;
+				right:0;
+				top:0;
+			}
 		}
 		.ctrl-i{
 			display: flex;
@@ -819,14 +825,7 @@
 				text-align: center;
 			}
 		}
-		.coloseCtrl{
-			color:#fff;
-			background:#f90;
-			width:100%;
-			text-align: center;
-			padding:15px 0;
-			font-size:32px;
-		}
+		
 	}
 	.slicePic{
 		position:absolute;
@@ -945,9 +944,7 @@
 		}
 		.edit-text-header{
 			font-size:32px;
-			background:#f90;
-			padding:15px;
-			color:#fff;
+			color:#f20;
 			width:100%;
 			margin-bottom: 10px;
 		}
