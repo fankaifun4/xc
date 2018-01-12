@@ -1,0 +1,87 @@
+
+
+export const responseData = {
+	"theme":"青春年少",
+	"list":[{
+		"bgImg":"static/bgc/aa.png",
+		"id":"asdasd1",
+		"cvsRatio":1.42,
+		"textList":[],
+		"list":[{
+			"width":40,
+			"height":30,
+			"top":10,
+			"left":10,
+			"rotate":0,
+			"id":"asdasd1",
+			"opcity":1,
+			"pic":"static/bgc/1.jpg",
+			"aspectRatio":1.777,
+		},{
+			"width":30,
+			"height":60,
+			"top":15,
+			"left":60,
+			"rotate":0,
+			"id":"asdasdas2",
+			"opcity":1,
+			"pic":"",
+			"aspectRatio":1.333,
+		}],
+		
+	},{
+		"bgImg":"static/bgc/1.jpg",
+		"id":"asdasd2",
+		"cvsRatio":0.750,
+		"textList":[],
+		"list":[{
+			"width":40,
+			"height":30,
+			"top":10,
+			"left":10,
+			"rotate":0,
+			"id":"asdasd1_1",
+			"opcity":1,
+			"pic":"",
+			"aspectRatio":1.777,
+		},{
+			"width":30,
+			"height":60,
+			"top":15,
+			"left":60,
+			"rotate":0,
+			"id":"asdasdas2_2",
+			"opcity":1,
+			"pic":"",
+			"aspectRatio":1.333,
+		}],
+		
+	},{
+		"bgImg":"static/bgc/2.jpg",
+		"id":"asdasd1_3",
+		"cvsRatio":0.665,
+		"textList":[],
+		"list":[{
+			"width":40,
+			"height":30,
+			"top":10,
+			"left":10,
+			"rotate":0,
+			"id":"asdasd13",
+			"opcity":1,
+			"pic":"",
+			"aspectRatio":1.777,
+		},{
+			"width":30,
+			"height":60,
+			"top":15,
+			"left":60,
+			"rotate":0,
+			"id":"asdasdas23",
+			"opcity":1,
+			"pic":"",
+			"aspectRatio":1.333,
+		}],
+		
+	}]
+}

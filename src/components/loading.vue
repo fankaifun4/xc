@@ -1,5 +1,8 @@
 <template>
   <div class="loade">
+      <div  class="loading-tips">
+        <slot name="loadingName"></slot>
+      </div>
       <div class="loader loader--spinningDisc"></div>
   </div>
 </template>
@@ -12,6 +15,17 @@
     right:0;
     background:rgba(0,0,0,.5);
     z-index:999;
+    display: flex;
+    justify-content:center;
+    align-items: flex-start
+}
+.loading-tips{
+  color:#fff;
+  display: flex;
+  justify-content:center;
+  align-items:center;
+  margin-top:10px;
+  font-size:32px;
 }
 .loader--spinningDisc {
   border: solid 0.2rem #04f3fb;

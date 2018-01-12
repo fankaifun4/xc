@@ -114,7 +114,8 @@
 			
         </div>
 		<div class="saveImg" @click="addTextBtn">添加文字</div>
-		<div class="saveImg" @click="preview">预览高清</div>
+		<div class="saveImg" @click="preview">预览高清,并去保存当前相片</div>
+		<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
 		<footer class="footer">
 			<div class="img-items">
 				<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
@@ -140,8 +141,9 @@
 				<div class="wrap-body">
 					<div class="close-change" @click="closeChangeImg">关闭</div>
 					<div class="upload">上传图片
-						<input class="getFiles" type="file" name="" @change="getFiles" ref="uploadFiles"
-				 accept=".jpg, .jpeg, .png"  >
+						<input class="getFiles" type="file" name="" 
+						@change="getFiles" ref="uploadFiles"
+						accept=".jpg, .jpeg, .png"  >
 					</div>
 					<div class="change" @click="changePics">修改图片</div>
 					<div class="success" @click="drawItems">确定上传</div>
@@ -154,13 +156,18 @@
 			</div>
 		</div>
 		<!-- loading -->
-        <loading v-show="isloading"></loading>
+        <loading v-show="isloading">
+        	<div slot="loadingName">
+        		{{ loadingCont }}
+        	</div>
+        </loading>
 		<!-- 裁剪组件 -->
         <cut :aspectr="ratio" :class="isCut?'show':'hidden'" 
 			@cancel="cancel" 
 			@isload="isload"
 			@closeload="closeload"
 			@setCutImage="setCutImage"
+			@showLoading='showLoading'
 			:cutUrl="iscutUrl"></cut>
 		<!-- 修改图片组件 -->
 		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
@@ -173,8 +180,34 @@
 	import colorPicker from '@/components/color-picker'
 	import drawcvs from '@/mixins/draw-cvs'
 	import Swiper from 'swiper'
-	
+	import {responseData} from './data.js'
 	import {mapState,mapActions} from 'vuex'
+	
+	const collection= [{
+		//背景
+		bgImg:"static/bgc/aa.png",
+		//列表单个ID
+		id:"img_list_0",
+		//主视图比例
+		cvsRatio:10/7,
+		//文字数据
+		textList:[],
+		//相片元素数据
+		//除了opcity,rotate为实数，其他都为百分比
+		list:[{
+			width:40,
+			height:30,
+			top:10,
+			left:10,
+			rotate:0,
+			id:'imageone',
+			opcity:1,
+			pic:"static/bgc/1.jpg",
+			aspectRatio:9/3,
+		}],
+		
+	}]
+
     export default{
         data(){
             return{
@@ -196,40 +229,7 @@
 				//编辑图片元素控制器开关
 				picItemCtrl:false,
 				//加载相册模板列表
-				tempData:[{
-					//背景
-					bgImg:"static/bgc/aa.png",
-					//列表单个ID
-					id:"img_list_0",
-					//主视图比例
-					cvsRatio:10/7,
-					//文字数据
-					textList:[],
-					//相片元素数据
-					//除了opcity,rotate为实数，其他都为百分比
-					list:[{
-						width:40,
-						height:30,
-						top:10,
-						left:10,
-						rotate:0,
-						id:'imageone',
-						opcity:1,
-						pic:"static/bgc/1.jpg",
-						aspectRatio:9/3,
-					},{
-						width:30,
-						height:60,
-						top:15,
-						left:60,
-						rotate:0,
-						id:'imagetwo',
-						opcity:1,
-						pic:"static/bgc/2.jpg",
-						aspectRatio:4/3,
-					}],
-					
-				}],
+				tempData:[],
 				//当前编辑的相片
                 data:{},
                 //计算长宽高偏移量控制台算数表达
@@ -249,7 +249,6 @@
                 cvs:null,
                 //当前选择的相册元素
                 current:null,
-                
 				//修改上传组件开关
 				isChangeImg:false,
 				//缓存上传base64url
@@ -263,7 +262,10 @@
 				//颜色编辑器开关
 				colorWrap:false,
 				//预览canvas
-				previewCVS:false
+				previewCVS:false,
+				loadingCont:"正在初始化...",
+				preImagesTpl:[],
+				baseUrl:'http://tp.taodama.net/'
             }
 		},
         components:{
@@ -273,22 +275,81 @@
 			colorPicker
         },
         mounted(){
-			this.initDrawView()
-		    var swiper = new Swiper('.swiper-container', {
-		        pagination: '.swiper-pagination',
-		        slidesPerView: 3,
-		        paginationClickable: true,
-		        spaceBetween: 15,
-		        paginationType: 'fraction',
-		        preloadImages: true,
-		        observer:true,
-		    });
+			this.getData()
         },
         computed:{
 			...mapState(['imgId','imgUrl','imglist']),
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+        	//init加载元素
+        	initload(){
+        		this.$http.get('/api/getalbum').then(res=>{
+        			console.log(res.data)
+        		})
+
+        		let promise=new Promise((resolve,reject)=>{
+        			setTimeout(function(){
+        				let res=responseData
+        				resolve(res)
+        			},100)
+        		})
+        		return promise
+        	},
+        	async loadingImg(item){
+        		let promise=new Promise((resolve,reject)=>{
+        			let img = new Image()
+        			img.src = item.bgImg
+            		img.onload = () => {
+            			this.loadingCont="正在加载:相框"+item.id
+            			resolve(img)
+            		}
+            		img.onError=()=>{
+            			this.loadingCont="正在加载:相框"+item.id+'失败'
+            			reject()
+            		}
+		            img.onerror = reject
+		        })
+		        return promise
+        	},
+        	async preImages(list){
+        		this.preImagesTpl=[]
+        		let isload=[]
+				list.forEach(item=>{
+					let pro=this.loadingImg(item)
+							.then(img=>this.preImagesTpl.push(img))
+							.catch(e=> console.log(err))
+					isload.push(pro)
+				})
+				return new Promise((resolve,reject)=>{
+					Promise.all(isload).then(()=>{
+    					resolve(true)
+    				})
+				})
+        		
+        	},
+        	async getData(){
+        		this.isloading=true
+        		this.loadingCont="正在初始化请稍后..."
+        		let res=await this.initload()
+        		this.loadingCont="数据初始化完成，正在加载素材"
+        		let theme=res.theme;
+        		let data=res.list
+        		let loadbg=await this.preImages(data)
+        		this.loadingCont="背景图片加载完成"
+        		this.tempData=data
+        		this.loadingCont="正在渲染相册结构..."
+		  		this.initDrawView()
+        		var swiper = new Swiper('.swiper-container', {
+			        pagination: '.swiper-pagination',
+			        slidesPerView: 3,
+			        paginationClickable: true,
+			        spaceBetween: 15,
+			        paginationType: 'fraction',
+			        preloadImages: true,
+			        observer:true,
+			    });
+        	},
         	//初始化
             initDrawView(){
                 //初始化画布大小
@@ -300,7 +361,9 @@
 				let cvsBackground=this.$refs.cvsBackground
 				cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
 				cvsBackground.style.backgroundSize="100%";
-				
+				this.loadingCont="相册结构渲染完成..."
+				this.isloading=false
+				this.loadingCont=""
 			},
 			//获取修改传过来的url
 			getChoiseImg(url){
@@ -334,15 +397,20 @@
 				this.isloading=false
 			},
 			//获取裁剪后的图片地址
-			setCutImage(base64Url){
-				this.current.pic=base64Url
+			setCutImage(url){
+				console.log(url)
+				this.current.pic=this.baseUrl+url
+			},
+			showLoading(value){
+				console.log(value)
+				this.isloading=value
 			},
 			//关闭修改图片组件
 			closeChangeImg(){
 				this.isChange=false
         		this.isChangeImg=false
         	},
-			//保存成图片
+			//高清预览并画成图片
             preview(){
 				let canvas=this.$refs.tempCvas
 				let drawBox=this.$refs.cvs
@@ -360,13 +428,6 @@
 				// let ImgBase64=canvas.toDataURL("image/png")
 				// let image=new Image()
 				// image.src=ImgBase64
-				// if(image.complete){
-				// 	console.log(image.width,image.height)
-				// 	return
-				// }
-				// image.onload=function(){
-				// 	console.log(image.width,image.height)
-				// }
 				// drawcvs.draw(drawData)
 		    	// var image = new Image()
 		    	// var data = this.cvs.toDataURL("image/png")
@@ -501,9 +562,38 @@
 			drawBgImg(model){
 				this.data=model
 				let cvsBackground=this.$refs.cvsBackground
-				cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
-				cvsBackground.style.backgroundSize="100%"
+				let cvs=this.$refs.cvs
+				let viweWidth=cvsBackground.clientWidth
+				let img=new Image()
+				img.src=model.bgImg;
+				if( img.complete ){
+					let pw=viweWidth/img.width
+					cvs.style.height=img.height*pw+'px'
+					cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
+					cvsBackground.style.backgroundSize="100% 100%"
+					return
+				}else{
+					img.onload=function(){
+						let pw=viweWidth/img.width
+						cvs.style.height=img.height*pw+'px'
+						cvsBackground.style.background="url("+this.data.bgImg+") no-repeat center"
+						cvsBackground.style.backgroundSize="100% 100%"
+					}
+					return
+				}
 			},
+			//获取input files 对象的bolob路径
+    		 getFileUrl(soure) {
+		        var url;
+		        if (navigator.userAgent.indexOf("MSIE") >= 1) { // IE 
+		            url = soure.value;
+		        } else if (navigator.userAgent.indexOf("Firefox") > 0) { // Firefox 
+		            url = window.URL.createObjectURL(soure.files[0]);
+		        } else if (navigator.userAgent.indexOf("Chrome") > 0) { // Chrome 
+		            url = window.URL.createObjectURL(soure.files[0]);
+		        }
+		        return url;
+		    },
 			//上传图片
 			drawItems(){
 				let _this=this
@@ -514,6 +604,7 @@
 					alert('图片必须小于2M')
 					return
 				}
+				let blobImg=this.getFileUrl(uploadFiles)
 				let bob=uploadFiles.files[0]
 				let file=new FormData()
 				file.append('file',bob)
@@ -529,6 +620,8 @@
 						_this.isloading=false
 						url+=data.img
 						cur.pic=url
+						cur.itemBlob=blobImg
+						console.log( cur )
 						_this.isChangeImg=false
 						_this.$store.dispatch('setImg',url)
 					}
@@ -632,9 +725,47 @@
 					temp_bg.forEach(item=>{
 						if( item.id== DataId){
 							item.src=base64Data
+							this.previewCVS=false
 						}
 					})
 				}
+			},
+			sendAllData(){
+				let isOver=[]
+				this.tempData.forEach((item,index)=>{
+					let bgList={
+						index:'',
+						done:false
+					}
+					item.list.forEach(img=>{
+						bgList.done=img.pic!=''?true:false
+						bgList.index=index
+					})
+					isOver.push(bgList)
+				})
+				let imgIndex=[]
+				isOver.forEach(item=>{
+					if(!item.done){
+						imgIndex.push(item.index+1)
+					}
+				})
+				if(imgIndex.length>0){
+					let alertIndex=imgIndex.toString()
+					let isNext=confirm('还有第'+alertIndex+'张未设置完成，需要继续设置照片吗？')
+					if(isNext){
+						console.log('toSend')
+					}else{
+						return
+					}
+				}else{
+					let isUplod=confirm('确定要上传所有主题相册吗？')
+					if(isUplod){
+						console.log('toSend')
+					}else{
+						return;
+					}
+				}
+
 			}
         }     
     }

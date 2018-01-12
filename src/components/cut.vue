@@ -82,9 +82,23 @@
 				let canvasWrap=this.$refs.canvasWrap;
 				let canvas=canvasWrap.children[0];
 				let url=canvas.toDataURL()
-				this.$emit('setCutImage',url)
-				this.isDroop=false
-				this.$emit('cancel')
+				var file = new FormData()
+				file.append('file', url)
+				let _this=this;
+				this.$emit('showLoading',true)
+                this.$http.post('/api/upbob',file,{
+						headers:{'Content-Type':'multipart/form-data'}
+					}
+				).then((res)=>{
+					_this.$emit('setCutImage',res.data.img)
+					_this.isDroop=false
+					_this.$emit('showLoading',false)
+					_this.$emit('cancel')
+				})
+				.catch(function(er){
+					alert('上传出错')
+					_this.$emit('cancel')
+				})
 				
 			},
 			//重置裁剪

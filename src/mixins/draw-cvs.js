@@ -33,6 +33,7 @@ export default {
                     templObj['opcity'] = item.opcity
                     templObj['aspectRatio'] = item.aspectRatio
                     templObj['pic'] = item.pic
+                    templObj['itemBlob'] = item.itemBlob
                     for (let i = 0; i < imglist.length; i++) {
                         if (templObj.id == imglist[i].id) {
                             templObj['img'] = imglist[i]
@@ -82,6 +83,13 @@ export default {
     //开始画图
     initDraw() {
         let empty = []
+        function fileOrBlobToDataURL(obj, cb){
+            var a = new FileReader();
+            a.readAsDataURL(obj);
+            a.onload = function (e){
+                cb(e.target.result);
+            };
+        }
         this.listImg.forEach(item => {
             if (item.img.src.match(/.jpg|.png|.jpeg/)) {
                 empty.push(item)
