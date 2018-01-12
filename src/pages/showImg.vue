@@ -284,17 +284,9 @@
         methods:{
         	//init加载元素
         	initload(){
-        		this.$http.get('/api/getalbum').then(res=>{
-        			console.log(res.data)
+        		return this.$http.get('http://tp.taodama.net/mobile/photo/getalbum?id=1').then(res=>{
+        			return res.data
         		})
-
-        		let promise=new Promise((resolve,reject)=>{
-        			setTimeout(function(){
-        				let res=responseData
-        				resolve(res)
-        			},100)
-        		})
-        		return promise
         	},
         	async loadingImg(item){
         		let promise=new Promise((resolve,reject)=>{
@@ -333,8 +325,8 @@
         		this.loadingCont="正在初始化请稍后..."
         		let res=await this.initload()
         		this.loadingCont="数据初始化完成，正在加载素材"
-        		let theme=res.theme;
-        		let data=res.list
+        		let theme=res.data.theme;
+        		let data=res.data.list
         		let loadbg=await this.preImages(data)
         		this.loadingCont="背景图片加载完成"
         		this.tempData=data
@@ -424,7 +416,7 @@
 				
 				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
 				this.previewCVS=true;
-				// /api/upbob
+				// /upbob
 				// let ImgBase64=canvas.toDataURL("image/png")
 				// let image=new Image()
 				// image.src=ImgBase64
@@ -433,7 +425,7 @@
 		    	// var data = this.cvs.toDataURL("image/png")
 				// var file = new FormData()
                 // file.append('file', data)
-                // this.$http.post('/api/upbob',file,{
+                // this.$http.post('/upbob',file,{
 				// 		headers:{'Content-Type':'multipart/form-data'}
 				// 	}
 				// )
@@ -549,9 +541,9 @@
 				let p=this.getPosition(cur)
                 this.computPX(cur)
 				if( name ==='width'){
-					cur.width+=value
+					cur.width=parseInt(cur.width+value)
 				}else if(name==='height'){
-					cur.height+=value
+					cur.height=parseInt(cur.height+value)
 				}
 				this.cutRect={
 					left:p.l+'px',
@@ -609,7 +601,7 @@
 				let file=new FormData()
 				file.append('file',bob)
 				_this.isloading=true
-				this.$http.post('/api/upload',file,{
+				this.$http.post('http://tp.taodama.net/mobile/photo/upload',file,{
 						headers:{'Content-Type':'multipart/form-data'}
 					}
 				)

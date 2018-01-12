@@ -86,7 +86,7 @@
 				file.append('file', url)
 				let _this=this;
 				this.$emit('showLoading',true)
-                this.$http.post('/api/upbob',file,{
+                this.$http.post('http://tp.taodama.net/mobile/photo/upbob',file,{
 						headers:{'Content-Type':'multipart/form-data'}
 					}
 				).then((res)=>{
@@ -98,6 +98,7 @@
 				.catch(function(er){
 					alert('上传出错')
 					_this.$emit('cancel')
+					_this.$emit('showLoading',false)
 				})
 				
 			},
