@@ -21,14 +21,15 @@ export default {
       return{
           imglists:[],
           choiseImg:"",
-          active:null
+          active:null,
+          baseUrl:'http://tp.taodama.net/'
       }
   },
   mounted(){
       this.setImage()
   },
   computed:{
-        ...mapState(['imgId','imgUrl','imglist']),
+      ...mapState(['imgId','imgUrl','imglist']),
 	    ...mapActions(['setImg','getImg','getAll']),
   },
   methods:{

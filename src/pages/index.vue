@@ -1,6 +1,13 @@
 <template>
     <section class="container">
-        <header class="header">相册制作</header>
+        <header class="header">
+        	<span class="header-title">
+        		相册制作
+        	</span>
+        	<span class="fr" @click="gomMyAlbum">
+        		我的相册<span class="iconfont icon-you"></span>
+        	</span>
+        </header>
         <div class="dw-container">
             <div class="draw-content" ref="cvs"  @click="getItems" >
                 <div class="bgImg" ref="cvsBackground">
@@ -113,9 +120,11 @@
             </div>
 			
         </div>
-		<div class="saveImg" @click="addTextBtn">添加文字</div>
-		<div class="saveImg" @click="preview">预览高清,并去保存当前相片</div>
-		<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
+        <div class="ctrl-alumb-wrap">
+        	<div class="saveImg" @click="addTextBtn">添加文字</div>
+			<div class="saveImg" @click="preview">预览高清,并去保存当前相片</div>
+			<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
+        </div>
 		<footer class="footer">
 			<div class="img-items">
 				<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
@@ -146,8 +155,7 @@
 						accept=".jpg, .jpeg, .png"  >
 					</div>
 					<div class="change" @click="changePics">修改图片</div>
-					<div class="success" @click="drawItems">确定上传</div>
-					<div class="lookload">预览</div>
+					<!-- <div class="success" @click="drawItems">确定上传</div> -->
 					<div class="readerImg ">
 						<img :src="itemsFile" alt="" ref="readFile">
 					</div>
@@ -182,7 +190,7 @@
 	import Swiper from 'swiper'
 	import {responseData} from './data.js'
 	import {mapState,mapActions} from 'vuex'
-	import {upload,getAlbum} from '../service/album'
+	import {upload,getAlbum,uploadAlbums} from '../service/album'
 	const collection= [{
 		//背景
 		bgImg:"static/bgc/aa.png",
@@ -265,7 +273,8 @@
 				previewCVS:false,
 				loadingCont:"正在初始化...",
 				preImagesTpl:[],
-				baseUrl:'http://tp.taodama.net/'
+				baseUrl:'http://tp.taodama.net/',
+				swiper:null
             }
 		},
         components:{
@@ -282,6 +291,9 @@
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+        	gomMyAlbum(){
+        		this.$router.push({name:"mylist"})
+        	},
         	//init加载元素
         	async loadingImg(item){
         		let promise=new Promise((resolve,reject)=>{
@@ -305,12 +317,14 @@
 				list.forEach(item=>{
 					let pro=this.loadingImg(item)
 							.then(img=>this.preImagesTpl.push(img))
-							.catch(e=> console.log(err))
+							.catch(e=> e)
 					isload.push(pro)
 				})
 				return new Promise((resolve,reject)=>{
 					Promise.all(isload).then(()=>{
     					resolve(true)
+    				}).catch(()=>{
+    					reject(false)
     				})
 				})
         		
@@ -327,10 +341,11 @@
         		this.tempData=data
         		this.loadingCont="正在渲染相册结构..."
 		  		this.initDrawView()
-        		var swiper = new Swiper('.swiper-container', {
+        		this.swiper = new Swiper('.swiper-container', {
 			        pagination: '.swiper-pagination',
-			        slidesPerView: 3,
-			        paginationClickable: true,
+			        // dynamicBullets: true,
+			        slidesPerView: 4,
+			        initialSlide: 0,
 			        spaceBetween: 15,
 			        paginationType: 'fraction',
 			        preloadImages: true,
@@ -385,11 +400,13 @@
 			},
 			//获取裁剪后的图片地址
 			setCutImage(url){
-				console.log(url)
 				this.current.pic=this.baseUrl+url
+				this.itemsFile=this.baseUrl+url
+				this.$store.dispatch('setImg',url)
+				this.isCut=false
+				this.isChangeImg=false
 			},
 			showLoading(value){
-				console.log(value)
 				this.isloading=value
 			},
 			//关闭修改图片组件
@@ -419,12 +436,24 @@
 			},
 			//获取上传图片blob
 			getFiles(){
+				let cur=this.current
 				let uploadFiles=this.$refs.uploadFiles
 				let fs=new FileReader()
+				fs.readAsDataURL(uploadFiles.files[0])
 				fs.onload=(e)=>{
 					this.itemsFile=e.target.result
+					this.isCut=true
+					this.current.pic=this.itemsFile
+					this.iscutUrl=this.itemsFile
+					if(!cur.pic) {
+						alert('没有裁剪的图片，请先添加图片')
+						this.isChange=false
+						return
+					}
+					this.ratio=cur.aspectRatio
+					this.isCut=true
+					this.isChange=false
 				}
-				fs.readAsDataURL(uploadFiles.files[0])
 			},
 			//修改图片
 			changePics(){
@@ -459,6 +488,13 @@
 			//关闭裁剪
             cancel(){
 				this.isCut=false
+				this.closeChangeImg()
+				this.deletePicUrl()
+            },
+            //清空上传图片，预览图片路径
+            deletePicUrl(){
+            	this.itemsFile=null
+            	this.$refs.uploadFiles.value=''
             },
             //计算显示位置
 			computPX(current){
@@ -684,6 +720,9 @@
 					})
 				}
 			},
+			async uploadAlums(params){
+				let res=await uploadAlbums(params)
+			},
 			sendAllData(){
 				let isOver=[]
 				this.tempData.forEach((item,index)=>{
@@ -703,34 +742,26 @@
 						imgIndex.push(item.index+1)
 					}
 				})
-				console.log(this.tempData)
 				let uid=1;
 				let id=1;
-				let jsondata = JSON.stringify( this.tempData ) 
-				let sendData={
-					uid:uid,
-					id:id,
-					jsondata:jsondata
-				}
+				let jsondata = this.tempData 
+				let formData=new FormData()
+				formData.append('uid',uid)
+				formData.append('id',id)
+				formData.append('jsondata',JSON.stringify(jsondata))
 				if(imgIndex.length>0){
 					let alertIndex=imgIndex.toString()
-					let isNext=confirm('还有第'+alertIndex+'张未设置完成，需要继续设置照片吗？')
+					let isNext=confirm('还有第'+alertIndex+'张未设置完成，暂时将当前相册保存到服务器？')
 					if(isNext){
-						// this.$http({
-						// 	method:"POST",
-						// 	url:'http://tp.taodama.net/mobile/photo/upusalbum',
-						// 	data:{
-						// 		firstName:"Fred",
-						// 		lastName:"Flintstone"
-						// 	}
-						// })
+						this.uploadAlums(formData)
+						return
 					}else{
 						return
 					}
 				}else{
 					let isUplod=confirm('确定要上传所有主题相册吗？')
 					if(isUplod){
-						console.log('toSend')
+						this.uploadAlums(formData)
 					}else{
 						return;
 					}
@@ -743,24 +774,35 @@
 <style lang="scss" scoped>
 	@import "../style/swiper.scss";
 	@import "../style/modal.scss";
+	.swiper-slide{
+		background:#ccc;
+	}
 	.chiose-text{
 		border:2px dashed #f90 !important;
 		box-sizing: border-box;
 	}
 	.header{
-		padding:20px 15px;
+		padding:30px 25px;
 		font-size:34px;
 		text-align: center;
+		color:#fff;
+		font-weight: 700;
+		background:#333;
+		.header-title{
+			width:300px;
+			display:inline-block;
+			margin-left:150px;
+		}
 	}
+
     .container{
         width:100%;
-        height:100%;
+        background:#ccc;
     }
     .dw-container{
-        width:100%;
-        border:1px dashed rgb(21, 194, 6);
+        padding:25px;
         box-sizing: border-box;
-        background:#fff;
+        background:#ccc;
         position:relative;
     }
     .draw-content{
@@ -768,6 +810,7 @@
         width:100%;
         height:100%;
 		overflow:hidden;
+		border:2px dashed #000;
 		.bgImg{
 			width:100%;
 			height:100%;
@@ -825,13 +868,17 @@
 	.show{
 		visibility: visible
 	}
+	.ctrl-alumb-wrap{
+		padding:25px;
+		background:#ccc;
+	}
 	.saveImg{
-		padding:15px 20px;
-		background:#090;
+		padding:25px;
+		background:#222;
 		color:#fff;
 		box-sizing:border-box;
-		border-radius: 5px;
-		margin:10px 30px;
+		border-radius: 1px;
+		margin:10px auto;
 		text-align: center;
 		font-size:40px;
 	}
@@ -876,22 +923,23 @@
 		margin:35px;
 		border:1px solid #ccc;
 		border-radius: 4px 4px 0 0;
+		background:#fff;
 		.titles{
 			width:100%;
 			text-align: center;
 			border-bottom:1px solid #ccc;
-			padding:15px;
+			padding:25px;
 			font-size:32px;
-			background:#286090;
+			background:#F32;
 			color:#fff;
 			border-color: #204d74;
-			margin-bottom:15px;
+			margin-bottom:25px;
 			position:relative;
 			.coloseCtrl{
 				color:#fff;
 				background:transparent;
 				text-align: center;
-				padding:0 15px;
+				padding:0 25px;
 				font-size:32px;
 				position:absolute;
 				display:inline-block;
@@ -912,12 +960,12 @@
 				padding:8px 7px;
 			}
 			.btn{
-				background: #286090;
-				border-color:#204d74;
-				border-radius: 3px;
+				background: #f32;
+				border:1px solid #333;
+				border-radius: 1px;
 				color:#fff;
 				font-size:30px;
-				width:100px;
+				width:105px;
 				text-align: center;
 			}
 			.value{
@@ -970,7 +1018,7 @@
 				color:#000;
 				text-align: center;
 				>div{
-					padding:20px 15px;
+					padding:20px 25px;
 					border:1px solid #cecece;
 					border-radius: 5px;
 					color:#fff;
@@ -979,8 +1027,8 @@
 				.readerImg{
 					margin-top:10px;
 					padding:0;
-					border-radius: 0;
-					background:#fff;
+					background:#ccc;
+					min-height:300px;
 					>img{
 						width:100%;
 						display: block;
@@ -1013,7 +1061,7 @@
 					background:#093;
 				}
 				.change{
-					margin-top:50px;
+					margin:30px 0;
 					background:#990000;
 				}
 				.close-change{
@@ -1035,11 +1083,12 @@
 		flex-wrap: wrap;
 		.edit-text-footer{
 			width:100%;
+			background:#fff;
 		}
 		.change-text-color{
 			font-size:32px;
 			background:#f90;
-			padding:15px;
+			padding:25px;
 			color:#fff;
 			margin-bottom: 10px;
 		}
@@ -1048,10 +1097,12 @@
 			color:#f20;
 			width:100%;
 			margin-bottom: 10px;
+			background:#fff;
 		}
 	}
 	.footer{
-		margin-top:30px;
+		padding:30px 10px;
+		background:#333;
 	}
 	
 </style>

@@ -1,8 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import mantrl from '@/pages/mantrl'
 import index from '@/pages/index'
-import cropper from '@/pages/cropper'
 Vue.use(Router)
 
 export default new Router({
@@ -10,5 +8,9 @@ export default new Router({
         path: '/',
         name: 'index',
         component: index
+    },{
+        path: '/mylist',
+        name: 'mylist',
+      	component: r => require.ensure([], () => r(require('../pages/getmyalbum.vue')), 'album')
     }]
 })

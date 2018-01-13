@@ -35,7 +35,7 @@
 <script>
 	import {mapState,mapActions} from 'vuex'
 	import Cropper from 'cropperjs'
-	import {upload} from '../service/album'
+	import {upload,uploadBolb} from '../service/album'
 	import '../style/cropper.scss'
 	export default{
 		props:['aspectr','cutUrl'],
@@ -86,8 +86,8 @@
 				let url=canvas.toDataURL()
 				var file = new FormData()
 				file.append('file', url)
-				let redData=await upload(file)
-				this.$emit('setCutImage',res.data.img)
+				let redData=await uploadBolb(file)
+				this.$emit('setCutImage',redData.img)
 				this.isDroop=false
 				this.$emit('showLoading',false)
 				this.$emit('cancel')
@@ -111,7 +111,7 @@
 </script>
 <style  lang='scss'>
 	.layz{
-		position:absolute;
+		position:fixed;
 		left:0;
 		right: 0;
 		top:0;
