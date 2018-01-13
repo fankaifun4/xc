@@ -39,11 +39,7 @@ export default {
         //   this.$router.push({name:'pagehome',query:{ id:id,imgurl: this.choiseImg }})
       },
       setImage(){
-          let locaimg=JSON.parse( localStorage.getItem('imglist') )
-          if( !locaimg ) return
-          locaimg.forEach(item=>{
-              this.imglists.push(item)
-          })
+         this.imglists=this.imglist
       },
       togetImg(key){
           let url=this.imglists[key]

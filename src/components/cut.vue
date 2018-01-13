@@ -35,6 +35,7 @@
 <script>
 	import {mapState,mapActions} from 'vuex'
 	import Cropper from 'cropperjs'
+	import {upload} from '../service/album'
 	import '../style/cropper.scss'
 	export default{
 		props:['aspectr','cutUrl'],
@@ -78,29 +79,18 @@
 				canvasWrap.appendChild(canvas)
 			},
 			//保存裁剪素材
-			getSave(){
+			async getSave(){
+				this.$emit('showLoading',true)
 				let canvasWrap=this.$refs.canvasWrap;
 				let canvas=canvasWrap.children[0];
 				let url=canvas.toDataURL()
 				var file = new FormData()
 				file.append('file', url)
-				let _this=this;
-				this.$emit('showLoading',true)
-                this.$http.post('http://tp.taodama.net/mobile/photo/upbob',file,{
-						headers:{'Content-Type':'multipart/form-data'}
-					}
-				).then((res)=>{
-					_this.$emit('setCutImage',res.data.img)
-					_this.isDroop=false
-					_this.$emit('showLoading',false)
-					_this.$emit('cancel')
-				})
-				.catch(function(er){
-					alert('上传出错')
-					_this.$emit('cancel')
-					_this.$emit('showLoading',false)
-				})
-				
+				let redData=await upload(file)
+				this.$emit('setCutImage',res.data.img)
+				this.isDroop=false
+				this.$emit('showLoading',false)
+				this.$emit('cancel')
 			},
 			//重置裁剪
 			reset(){

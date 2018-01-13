@@ -1,14 +1,14 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import mantrl from '@/pages/mantrl'
-import pagehome from '@/pages/showImg'
+import index from '@/pages/index'
 import cropper from '@/pages/cropper'
 Vue.use(Router)
 
 export default new Router({
     routes: [{
         path: '/',
-        name: 'pagehome',
-        component: pagehome
+        name: 'index',
+        component: index
     }]
 })

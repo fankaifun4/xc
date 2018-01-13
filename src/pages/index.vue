@@ -182,7 +182,7 @@
 	import Swiper from 'swiper'
 	import {responseData} from './data.js'
 	import {mapState,mapActions} from 'vuex'
-	
+	import {upload,getAlbum} from '../service/album'
 	const collection= [{
 		//背景
 		bgImg:"static/bgc/aa.png",
@@ -283,11 +283,6 @@
         },
         methods:{
         	//init加载元素
-        	initload(){
-        		return this.$http.get('http://tp.taodama.net/mobile/photo/getalbum?id=1').then(res=>{
-        			return res.data
-        		})
-        	},
         	async loadingImg(item){
         		let promise=new Promise((resolve,reject)=>{
         			let img = new Image()
@@ -323,7 +318,7 @@
         	async getData(){
         		this.isloading=true
         		this.loadingCont="正在初始化请稍后..."
-        		let res=await this.initload()
+				let res=await getAlbum({id:1})
         		this.loadingCont="数据初始化完成，正在加载素材"
         		let theme=res.data.theme;
         		let data=res.data.list
@@ -416,26 +411,7 @@
 				
 				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
 				this.previewCVS=true;
-				// /upbob
-				// let ImgBase64=canvas.toDataURL("image/png")
-				// let image=new Image()
-				// image.src=ImgBase64
-				// drawcvs.draw(drawData)
-		    	// var image = new Image()
-		    	// var data = this.cvs.toDataURL("image/png")
-				// var file = new FormData()
-                // file.append('file', data)
-                // this.$http.post('/upbob',file,{
-				// 		headers:{'Content-Type':'multipart/form-data'}
-				// 	}
-				// )
-				// .then(function(res){
-				// 	console.log(res)
-				// })
-				// .catch(function(er){
-				// 	console.log(er)	
-				// })
-				// return image
+				
 		    },
             uploadPic(){
 				this.isChange=false
@@ -587,41 +563,27 @@
 		        return url;
 		    },
 			//上传图片
-			drawItems(){
-				let _this=this
+			async drawItems(){
+				this.isloading=true
 				let cur=this.current
 				let uploadFiles=this.$refs.uploadFiles
 				if( !uploadFiles.files[0] ) return
-				if(uploadFiles.files[0].size>1024*1024*2) {
-					alert('图片必须小于2M')
+				if(uploadFiles.files[0].size>1024*1024*4) {
+					alert('图片必须小于4M')
 					return
 				}
 				let blobImg=this.getFileUrl(uploadFiles)
 				let bob=uploadFiles.files[0]
 				let file=new FormData()
 				file.append('file',bob)
-				_this.isloading=true
-				this.$http.post('http://tp.taodama.net/mobile/photo/upload',file,{
-						headers:{'Content-Type':'multipart/form-data'}
-					}
-				)
-				.then(function(res){
-					let data=res.data
-					let url="http://tp.taodama.net/"
-					if(data.code){
-						_this.isloading=false
-						url+=data.img
-						cur.pic=url
-						cur.itemBlob=blobImg
-						console.log( cur )
-						_this.isChangeImg=false
-						_this.$store.dispatch('setImg',url)
-					}
-				})
-				.catch(function(er){
-					console.log(er)
-					_this.isloading=false
-				})
+				let resData=await upload(file)
+				this.isloading=false
+				let url="http://tp.taodama.net/"
+				url+=resData.img
+				cur.pic=url
+				cur.itemBlob=blobImg
+				this.isChangeImg=false
+				this.$store.dispatch('setImg',url)
 			},
 			//添加文字
 			addTextBtn(){
@@ -730,7 +692,7 @@
 						done:false
 					}
 					item.list.forEach(img=>{
-						bgList.done=img.pic!=''?true:false
+						bgList.done=!img.pic?false:true
 						bgList.index=index
 					})
 					isOver.push(bgList)
@@ -741,11 +703,27 @@
 						imgIndex.push(item.index+1)
 					}
 				})
+				console.log(this.tempData)
+				let uid=1;
+				let id=1;
+				let jsondata = JSON.stringify( this.tempData ) 
+				let sendData={
+					uid:uid,
+					id:id,
+					jsondata:jsondata
+				}
 				if(imgIndex.length>0){
 					let alertIndex=imgIndex.toString()
 					let isNext=confirm('还有第'+alertIndex+'张未设置完成，需要继续设置照片吗？')
 					if(isNext){
-						console.log('toSend')
+						// this.$http({
+						// 	method:"POST",
+						// 	url:'http://tp.taodama.net/mobile/photo/upusalbum',
+						// 	data:{
+						// 		firstName:"Fred",
+						// 		lastName:"Flintstone"
+						// 	}
+						// })
 					}else{
 						return
 					}
