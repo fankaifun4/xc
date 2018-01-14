@@ -2,22 +2,22 @@ export default {
     avadItem: [],
     tempImg: [],
     listImg: [],
-    textList:[],
+    textList: [],
     cvs: null,
     ctx: null,
     bckground: null,
     init(cvs, imglist, bg, data) {
         //存入数据
         //初始化需要画的图片元素列表
-        this.avadItem= []
-        this.tempImg= []
-        this.listImg= []
-        this.textList=[]
+        this.avadItem = []
+        this.tempImg = []
+        this.listImg = []
+        this.textList = []
         this.cvs = cvs
         this.bckground = bg
-        this.textList=data.textList
+        this.textList = data.textList
         this.ctx = this.cvs.getContext('2d')
-        this.ctx.clearRect(0,0,this.cvs.width,this.cvs.height)
+        this.ctx.clearRect(0, 0, this.cvs.width, this.cvs.height)
         let cvsHeight = cvs.height
         let cvsWidth = cvs.width
         let templObj = {}
@@ -34,6 +34,7 @@ export default {
                     templObj['aspectRatio'] = item.aspectRatio
                     templObj['pic'] = item.pic
                     templObj['itemBlob'] = item.itemBlob
+                    if (!imglist) return
                     for (let i = 0; i < imglist.length; i++) {
                         if (templObj.id == imglist[i].id) {
                             templObj['img'] = imglist[i]
@@ -64,7 +65,7 @@ export default {
         this.ctx.beginPath()
         this.ctx.translate(0, 0)
         this.ctx.drawImage(this.bckground, 0, 0, this.cvs.width, this.cvs.height)
-         return this;
+        return this;
     },
     //文字
     drawText(item) {
@@ -72,36 +73,39 @@ export default {
         this.ctx.save()
         this.ctx.translate(0, 0)
         this.ctx.textBaseline = 'hanging'
-        this.ctx.fillStyle=item.style.color
-        this.ctx.font=item.style.fontWeight +' '+ item.style.fontSize + 'px' +' '+ '微软雅黑'
-        let x=item.style.left.replace(/px/,'')
-        let y=item.style.top.replace(/px/,'')
-        this.ctx.fillText(item.text,x,y)
+        this.ctx.fillStyle = item.style.color
+        this.ctx.font = item.style.fontWeight + ' ' + item.style.fontSize + 'px' + ' ' + '微软雅黑'
+        let x = item.style.left.replace(/px/, '')
+        let y = item.style.top.replace(/px/, '')
+        this.ctx.fillText(item.text, x, y)
         this.ctx.restore();
         return this;
     },
     //开始画图
     initDraw() {
         let empty = []
-        function fileOrBlobToDataURL(obj, cb){
+
+        function fileOrBlobToDataURL(obj, cb) {
             var a = new FileReader();
             a.readAsDataURL(obj);
-            a.onload = function (e){
+            a.onload = function(e) {
                 cb(e.target.result);
             };
         }
+
         this.listImg.forEach(item => {
+            if (!item.img) return
             if (item.img.src.match(/.jpg|.png|.jpeg/)) {
                 empty.push(item)
             }
         })
         this.avadItem = empty
-        this.ctx.clearRect(0,0,this.cvs.width,this.cvs.height)
+        this.ctx.clearRect(0, 0, this.cvs.width, this.cvs.height)
         this.avadItem.forEach(item => {
             this.drawAVAD(item)
         })
         this.drawBG()
-        this.textList.forEach(item=>{
+        this.textList.forEach(item => {
             this.drawText(item)
         })
         return this;

@@ -9,7 +9,9 @@
         	</span>
         </header>
         <div class="dw-container">
-            <div class="draw-content" ref="cvs"  @click="getItems" >
+			<div class="iconfont icon-prev left swiper-button-prev" ref="swiperLeft" @click="prev"></div>
+			<div class="iconfont icon-you right swiper-button-next" ref="swiperRight" @click="next"></div>
+            <div class="draw-content"  :class="[animation?'opac1':'opac0']" ref="cvs"  @click="getItems" >
                 <div class="bgImg" ref="cvsBackground">
 					<img :src="data.bgImg" alt="" class="fade" ref="cvsBackgroundImg">
 				</div>
@@ -43,7 +45,7 @@
 						transform:'rotate('+item.rotate+'deg)',
 						}" >
                         <div v-if="!item.pic" class="iconfont icon-jia3"></div>
-						<img style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
+						<img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
                     </div>
                 </div>
             </div>
@@ -129,13 +131,13 @@
 			<div class="img-items">
 				<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
 					<div class="swiper-wrapper">
-						<div class="swiper-slide" v-for="(item,key) in tempData" :key="key">
-							<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item)">
+						<div class="swiper-slide" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
+							<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
 						</div>
-					</div>
-					<!-- Add Pagination -->
+				 	</div>
+					<!-- Add Pagination --> 
         			<div class="swiper-pagination"></div>
-				</div>
+				</div> 
 			</div>
 		</footer>
 	<!-- Modals -->	
@@ -274,7 +276,9 @@
 				loadingCont:"正在初始化...",
 				preImagesTpl:[],
 				baseUrl:'http://tp.taodama.net/',
-				swiper:null
+				swiper:null,
+				animation:true,
+				isActive:0
             }
 		},
         components:{
@@ -291,6 +295,29 @@
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+			prev(){
+				if(this.swiper.isBeginning) return
+				let cvs=this.$refs.cvs
+				this.animation=false
+				setTimeout(()=>this.animation=true,200)
+				this.swiper.slidePrev()
+				let index=this.swiper.realIndex
+				this.data=this.tempData[index]
+				this.isActive=index
+				this.drawBgImg(this.data,index)
+				
+			},
+			next(){
+				if(this.swiper.isEnd) return;
+				let cvs=this.$refs.cvs
+				this.animation=false
+				setTimeout(()=>this.animation=true,200)
+				this.swiper.slideNext()
+				let index=this.swiper.realIndex
+				this.data=this.tempData[index]
+				this.isActive=index
+				this.drawBgImg(this.data,index)
+			},
         	gomMyAlbum(){
         		this.$router.push({name:"mylist"})
         	},
@@ -339,22 +366,25 @@
         		let loadbg=await this.preImages(data)
         		this.loadingCont="背景图片加载完成"
         		this.tempData=data
-        		this.loadingCont="正在渲染相册结构..."
-		  		this.initDrawView()
-        		this.swiper = new Swiper('.swiper-container', {
-			        pagination: '.swiper-pagination',
-			        // dynamicBullets: true,
-			        slidesPerView: 4,
-			        initialSlide: 0,
-			        spaceBetween: 15,
-			        paginationType: 'fraction',
-			        preloadImages: true,
-			        observer:true,
-			    });
-        	},
-        	//初始化
-            initDrawView(){
-                //初始化画布大小
+				this.loadingCont="正在渲染相册结构..."
+				setTimeout(()=>{
+					 this.swiper	=new Swiper('.swiper-container', {
+					 	loop : false,
+						// pagination: {
+						// 	el: '.swiper-pagination',
+						// 	type: 'fraction'
+						// },
+						slidesPerView: 4,
+						spaceBetween: 15,
+						observer:true,
+					});
+					this.initDrawView()
+				},0)
+			},
+
+			//初始化
+			initDrawView(){
+				//初始化画布大小
 				this.cvs=this.$refs.cvs;
 				if(this.tempData.length>0){
 					this.data=this.tempData[0]
@@ -400,6 +430,10 @@
 			},
 			//获取裁剪后的图片地址
 			setCutImage(url){
+				if(!url) {
+					alert("上传失败,请检查网络是否畅通")
+					return
+				}
 				this.current.pic=this.baseUrl+url
 				this.itemsFile=this.baseUrl+url
 				this.$store.dispatch('setImg',url)
@@ -424,8 +458,11 @@
 				canvas.height=drawBoxHeight
 				let drawData=this.data
 				let avadList=this.$refs.avadList
+				// if( !avadList ){
+				// 	alert('还未编辑一个元素')
+				// 	return
+				// }
 				let cvsBackgroundImg=this.$refs.cvsBackgroundImg
-				
 				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
 				this.previewCVS=true;
 				
@@ -563,13 +600,18 @@
 				}
             },
 			//主操作区添加背景图片
-			drawBgImg(model){
+			drawBgImg(model,key){
 				this.data=model
 				let cvsBackground=this.$refs.cvsBackground
 				let cvs=this.$refs.cvs
 				let viweWidth=cvsBackground.clientWidth
 				let img=new Image()
 				img.src=model.bgImg;
+				this.animation=false
+				this.isActive=key
+				setTimeout(()=>{
+					this.animation=true
+				},200)
 				if( img.complete ){
 					let pw=viweWidth/img.width
 					cvs.style.height=img.height*pw+'px'
@@ -776,7 +818,12 @@
 	@import "../style/modal.scss";
 	.swiper-slide{
 		background:#ccc;
+		&.active{
+			border:3px solid #f00;
+			box-sizing: border-box
+		}
 	}
+	
 	.chiose-text{
 		border:2px dashed #f90 !important;
 		box-sizing: border-box;
@@ -803,7 +850,25 @@
         padding:25px;
         box-sizing: border-box;
         background:#ccc;
-        position:relative;
+		position:relative;
+		.left,.right{
+			width:80px;
+			height:80px;
+			position: absolute;
+			top:50%;
+			background:#204d74;
+			color:#fff;
+			z-index: 70;
+			text-align: center;
+			line-height: 80px;
+			margin-top:-40px;
+		}
+		.left{
+			left:0;
+		}
+		.right{
+			right:0;
+		}
     }
     .draw-content{
         position:relative;
@@ -811,11 +876,19 @@
         height:100%;
 		overflow:hidden;
 		border:2px dashed #000;
+		transition: all .2s;
+		z-index:3;
+		&.opac0{
+			opacity: 0;
+		}
+		&.opac1{
+			opacity: 1;
+		}
 		.bgImg{
 			width:100%;
 			height:100%;
 			position:absolute;
-			z-index:300;
+			z-index:5;
 		}
         .avad-img{
              position:absolute;
@@ -824,7 +897,7 @@
 			 display: flex;
 			 justify-content: center;
 			 align-items: center;
-			 z-index:100;
+			 z-index:4;
  			 >div{
 				 font-size:64px;
 			 }
@@ -869,22 +942,20 @@
 		visibility: visible
 	}
 	.ctrl-alumb-wrap{
-		padding:25px;
+		padding:15px;
 		background:#ccc;
 	}
 	.saveImg{
-		padding:25px;
+		padding:5px;
 		background:#222;
 		color:#fff;
 		box-sizing:border-box;
 		border-radius: 1px;
 		margin:10px auto;
 		text-align: center;
-		font-size:40px;
+		font-size:30px;
 	}
 	.img-items{
-		height:240px;
-		bottom: 20px;
 		.img-wrap{
 			.swiper-pagination{
 				background: rgba(0,0,0,.5);
@@ -920,7 +991,7 @@
 		display:flex;
 		flex-wrap:wrap;
 		align-items:center;
-		margin:35px;
+		margin:15px;
 		border:1px solid #ccc;
 		border-radius: 4px 4px 0 0;
 		background:#fff;
@@ -930,7 +1001,7 @@
 			border-bottom:1px solid #ccc;
 			padding:25px;
 			font-size:32px;
-			background:#F32;
+			background:#333;
 			color:#fff;
 			border-color: #204d74;
 			margin-bottom:25px;
@@ -960,7 +1031,7 @@
 				padding:8px 7px;
 			}
 			.btn{
-				background: #f32;
+				background: #333;
 				border:1px solid #333;
 				border-radius: 1px;
 				color:#fff;

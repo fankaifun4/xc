@@ -12,20 +12,13 @@
 		<section class="container">
 			<div class="list-title">
 				<ul>
-					<li>相册标题</li>
-					<li>相册标题</li>
-					<li>相册标题</li>
-					<li>相册标题</li>
-					<li>相册标题</li>
-					<li>相册标题</li>
+					<li v-for="(item,key) in dataList" 
+						:key="key" 
+						:class="{'active':active==item.id}" @click="goPath(item)">{{item.theme}}</li>
 				</ul>
-			</div>
-			<div class="list-cont">
-					
 			</div>
 		</section>
 		<footer>
-			
 		</footer>
 	</section>
 </template>
@@ -34,22 +27,32 @@
 	export default{
 		data(){
 			return{
-				dataList:[],
+				dataList:[
+					{theme:"相册1",id:1},
+					{theme:"相册2",id:2},
+					{theme:"相册3",id:3},
+					{theme:"相册4",id:4},
+					{theme:"相册5",id:5}
+				],
 				title:[],
-				choiseTitle:""
+				choiseTitle:"",
+				active:null
 			}
 		},
 		mounted(){
-			this.getListData({id:2})
+			this.getListData(2)
+			let query=this.$route.query
+			this.active=query.id
 		},
 		methods:{
 			async getListData(params){
-				let res = await getMyAlbList(params)
-				console.log(res)
+				let res = await getMyAlbList({id:params})
 			},
 			gotodraw(){
-				console.log(1)
-				this.$router.push({ name:"index" })
+            	this.$router.push({ name:"index" })
+        	},
+			goPath(model){
+				this.$router.push({name:"album",query:{id:model.id}})
 			}
 		},
 		computed:{
@@ -58,10 +61,6 @@
 	}
 </script>
 <style scoped lang="scss">
-.get-user-list{
-	background: #efefef;
-	min-height: 100%;
-}
 	.header{
 		padding:20px 15px;
 		font-size:34px;
@@ -100,9 +99,14 @@
 				>li{
 					padding:10px 20px;
 					display:inline-block;
+					background:#fff;
 					border:1px dashed #ccc;
 					font-size:32px;
 					margin:10px;
+					&.active{
+						background:#333;
+						color:#fff;
+					}
 				}
 			}
 		}

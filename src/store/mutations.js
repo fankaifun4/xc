@@ -8,6 +8,7 @@ export default {
         state.imglist.push(url)
     },
     [type.GETIMG]: (state, url) => {
+
         state.imgUrl = url
     },
     [type.SETCUTIMG]: (state, url) => {

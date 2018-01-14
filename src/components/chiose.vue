@@ -5,7 +5,7 @@
         </header>
         <div class="images-wrap" ref='imagesWrap'>
             <div v-for="(item,key) in imglists" :key="key" :class="{'isChoise':active==key}"  @click="togetImg(key)">
-                <img :src="item"/>
+                <img :src="baseUrl+item"/>
             </div>
             <div class="isempty" v-if="imglists.length<1">
                 <div>还没有上传的图片</div>
@@ -43,7 +43,7 @@ export default {
          this.imglists=this.imglist
       },
       togetImg(key){
-          let url=this.imglists[key]
+          let url=this.baseUrl+this.imglists[key]
           this.choiseImg=url
           this.active=key
       },
