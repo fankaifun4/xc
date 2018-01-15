@@ -666,13 +666,16 @@
 			//添加文字
 			addTextBtn(){
 				let addText=this.$refs.addText
+				let currentCVS=this.$refs.cvs
+				let textSize=currentCVS.clientWidth/24
 				this.data.textList.push({
 					style:{
-						left:'0px',
-						top:'0px',
+						left:'0',
+						top:'0',
 						color:'#ffff00',
-						fontSize:24,
-						fontWeight:300
+						fontSize:textSize,
+						fontWeight:300,
+						relFontSize:textSize/currentCVS.clientWidth
 					},
 					text:"请在此输入文字"
 				})
@@ -697,13 +700,12 @@
 			dragText(e,item,key){
 				e.preventDefault(); 
 				let cvs=this.$refs.cvs.parentNode
+				let currentCVS=this.$refs.cvs
 				let cur=e.currentTarget
 				let pageX=e.changedTouches[0].pageX-cvs.offsetLeft
 				let pageY=e.changedTouches[0].pageY-cvs.offsetTop
-				cur.style.left=parseInt(pageX-this.entPageX)+'px'
-				cur.style.top=parseInt(pageY-this.entPageY)+'px'
-				item.style.left = cur.style.left
-				item.style.top = cur.style.top
+				cur.style.left=parseInt(pageX-this.entPageX)/currentCVS.clientWidth*100+'%'
+				cur.style.top=parseInt(pageY-this.entPageY)/currentCVS.clientHeight*100+'%'
 			},
 			//编辑完成
 			endEdit(e,item,key){
@@ -731,7 +733,9 @@
 			},
 			//设置文字大小
 			setFontSize(value){
-				this.textItems.style.fontSize=parseInt(this.textItems.style.fontSize)+value
+				let currentCVS=this.$refs.cvs
+				this.textItems.style.fontSize+=value
+				this.textItems.style.relFontSize=this.textItems.style.fontSize/currentCVS.clientWidth
 			},
 			//设置文字字体粗细
 			setFontWeight(value){
