@@ -667,12 +667,12 @@
 			addTextBtn(){
 				let addText=this.$refs.addText
 				let currentCVS=this.$refs.cvs
-				let textSize=currentCVS.clientWidth/24
+				let textSize=parseInt(currentCVS.clientWidth/24)
 				this.data.textList.push({
 					style:{
 						left:'0',
 						top:'0',
-						color:'#ffff00',
+						color:'#000',
 						fontSize:textSize,
 						fontWeight:300,
 						relFontSize:textSize/currentCVS.clientWidth
@@ -706,6 +706,8 @@
 				let pageY=e.changedTouches[0].pageY-cvs.offsetTop
 				cur.style.left=parseInt(pageX-this.entPageX)/currentCVS.clientWidth*100+'%'
 				cur.style.top=parseInt(pageY-this.entPageY)/currentCVS.clientHeight*100+'%'
+				item.style.left=cur.style.left
+				item.style.top=cur.style.top
 			},
 			//编辑完成
 			endEdit(e,item,key){

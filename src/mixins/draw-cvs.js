@@ -75,8 +75,8 @@ export default {
         this.ctx.textBaseline = 'hanging'
         this.ctx.fillStyle = item.style.color
         this.ctx.font = item.style.fontWeight + ' ' + item.style.fontSize + 'px' + ' ' + '微软雅黑'
-        let x = item.style.left.replace(/px/, '')
-        let y = item.style.top.replace(/px/, '')
+        let x = parseInt( item.style.left.replace('%','')*this.cvs.width/100 )
+        let y = parseInt( item.style.top.replace('%','')*this.cvs.height/100 )
         this.ctx.fillText(item.text, x, y)
         this.ctx.restore();
         return this;
