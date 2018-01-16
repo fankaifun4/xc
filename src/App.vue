@@ -27,7 +27,8 @@ export default {
 <style>
 #app{
   width:100%;
-  height:100%;
+  min-height:100%;
+
 }
 .router-pop-out-enter-active,
   .router-pop-out-leave-active,

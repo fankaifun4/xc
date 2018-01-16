@@ -372,7 +372,6 @@
 					 	loop : false,
 						pagination:'.swiper-pagination',
 						paginationType : 'fraction',
-						slidesPerView: 1,
 						spaceBetween: 15,
 						observer:true,
 					});
@@ -848,12 +847,11 @@
 
     .container{
         width:100%;
-        background:#ccc;
+       
     }
     .dw-container{
         padding:25px;
         box-sizing: border-box;
-        background:#ccc;
 		position:relative;
 		.left,.right{
 			width:80px;
@@ -880,6 +878,7 @@
         height:100%;
 		overflow:hidden;
 		border:2px dashed #000;
+		background:#ccc;
 		transition: all .2s;
 		z-index:3;
 		&.opac0{
@@ -947,11 +946,10 @@
 	}
 	.ctrl-alumb-wrap{
 		padding:15px;
-		background:#ccc;
 	}
 	.saveImg{
-		padding:5px;
-		background:#222;
+		padding:15px;
+		background:#e30;
 		color:#fff;
 		box-sizing:border-box;
 		border-radius: 1px;
@@ -960,7 +958,7 @@
 		font-size:30px;
 	}
 	.img-items{
-		width:25%;
+		width:35%;
 		margin:auto;
 		.img-wrap{
 			width:100%;
@@ -1164,13 +1162,15 @@
 		flex-wrap: wrap;
 		.edit-text-footer{
 			width:100%;
-			background:#fff;
 		}
 		.change-text-color{
 			font-size:32px;
-			background:#f90;
-			padding:25px;
+			background:#333;
+			padding:15px;
 			color:#fff;
+			width:200px;
+			
+			margin:auto;
 			margin-bottom: 10px;
 		}
 		.edit-text-header{
@@ -1180,10 +1180,6 @@
 			margin-bottom: 10px;
 			background:#fff;
 		}
-	}
-	.footer{
-		padding:30px 10px;
-		background:#333;
 	}
 	
 </style>

@@ -92,7 +92,10 @@
 		padding:15px;
 		margin-top:30px;
 		.list-title{
-			background:#fff;
+			background:rgba(255,255,255,.5);
+			border-radius: 4px;
+			border:4px solid rgba(205,0,0,0.8);
+			box-sizing:border-box;
 			padding:10px 20px;
 			>ul{
 				list-style: none;
