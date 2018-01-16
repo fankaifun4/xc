@@ -370,11 +370,9 @@
 				setTimeout(()=>{
 					 this.swiper	=new Swiper('.swiper-container', {
 					 	loop : false,
-						// pagination: {
-						// 	el: '.swiper-pagination',
-						// 	type: 'fraction'
-						// },
-						slidesPerView: 4,
+						pagination:'.swiper-pagination',
+						paginationType : 'fraction',
+						slidesPerView: 1,
 						spaceBetween: 15,
 						observer:true,
 					});
@@ -962,7 +960,13 @@
 		font-size:30px;
 	}
 	.img-items{
+		width:25%;
+		margin:auto;
 		.img-wrap{
+			width:100%;
+			&.swiper-container{
+				overflow: visible;
+			}
 			.swiper-pagination{
 				background: rgba(0,0,0,.5);
 				color:#fff;
