@@ -18,7 +18,6 @@ export default {
     $route:function(to,from){
         const toDepth = to.path.split('/').length
         const fromDepth = from.path.split('/').length
-        console.log(  )
         this.transitionName = toDepth < fromDepth ? 'router-pop-out' : 'router-pop-in'
     }
   }
@@ -28,7 +27,8 @@ export default {
 #app{
   width:100%;
   min-height:100%;
-
+  background:url('./static/bg.png');
+  overflow-y:hidden;
 }
 .router-pop-out-enter-active,
   .router-pop-out-leave-active,

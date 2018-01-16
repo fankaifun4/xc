@@ -8,13 +8,12 @@
         	<span class="header-title">
         		查看我的相册
         	</span>
-        	
         </header>
-      <div v-if="!hasno">
+      <div v-if="!hasno" class="swiper-data">
          <div class="swiper-container">
             <div class="swiper-wrapper">
-                <div class="swiper-slide" v-for="(item,key) in albumList.list" :key="key">
-                    <img  :src="item.bgImg" :id="item.id" ref="lists" alt="" >
+                <div class="swiper-slide" v-for="(item,key) in albumList" :key="key">
+                    <imgshow :imgdata="item" />
                 </div>
             </div>
             <!-- Add Pagination -->
@@ -28,33 +27,31 @@
 </template>
 <script>
     import Swiper from 'swiper'
-    import {upload,getAlbum,uploadAlbums} from '../service/album'
+    import {getMyAlbList} from '../service/album'
+    import imgshow from '@/components/imgshow'
     export default{
         data(){
           return{
-            albumList:{},
+            albumList:[],
             id:null,
             hasno:true,
-            tip:""
+            tip:"",
+            swiper:null
           }  
+        },
+        components:{
+            imgshow
         },
         mounted () {
             this.id=this.$route.query.id
             this.getData(this.id)
-            this.swiper = new Swiper('.swiper-container', {
-                pagination: '.swiper-pagination',
-                initialSlide: 0,
-                paginationType: 'fraction',
-                preloadImages: true,
-                observer:true,
-            });
         },
         computed:{
-
+           
         },
         methods:{
             async getData(id){
-                let res = await getAlbum({id:id})
+                let res = await getMyAlbList({id:id})
                 if(!res.code){
                     this.hasno=true
                     this.tip="这个相册没有存货哟"
@@ -62,6 +59,16 @@
                 }
                 this.hasno=false
                 this.albumList=res.data
+                setTimeout(()=>{
+                    this.swiper = new Swiper('.swiper-container', {
+                        pagination : '.swiper-pagination',
+                        paginationClickable: true,
+                        paginationType : 'fraction',
+                        observer:true,
+                        spaceBetween:15,
+                        lazyLoading : true
+                    });
+                },100)
             },
             goBack(){
                 this.$router.push({name:"mylist",query:{id:this.id}})
@@ -71,6 +78,10 @@
 </script>
 <style lang="scss" scoped>
 @import "../style/swiper.scss";
+.ali{
+    height:400px;
+    background: #fff;
+}
 .al-list{
     height: 100%;
 }
@@ -103,30 +114,25 @@
         margin-left:-80px;
     }
 }
-    .swiper-container{
+.swiper-data{
+     padding:40px;
+}
+
+.swiper-slide{
+    box-sizing: border-box;
+    >img{
+        display: block;
+        border:none;
         width:100%;
-        .swiper-slide{
-            padding:15px;
-            background:#fff;
-            box-sizing: border-box;
-            >img{
-                display: block;
-                border:none;
-                width:100%;
-            }
-        }
-        .swiper-pagination{
-            background: rgba(0,0,0,.5);
-            color:#fff;
-            font-size:30px;
-        }
     }
-    .nodata{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding:50px;
-        color:#fff;
-        font-size:32px;
-    }
+}
+
+.nodata{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding:50px;
+    color:#fff;
+    font-size:32px;
+}
 </style>

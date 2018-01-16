@@ -8,179 +8,182 @@
         		我的相册<span class="iconfont icon-you"></span>
         	</span>
         </header>
-        <div class="dw-container">
-			<div class="iconfont icon-prev left swiper-button-prev" ref="swiperLeft" @click="prev"></div>
-			<div class="iconfont icon-you right swiper-button-next" ref="swiperRight" @click="next"></div>
-            <div class="draw-content"  :class="[animation?'opac1':'opac0']" ref="cvs"  @click="getItems" >
-                <div class="bgImg" ref="cvsBackground">
-					<img :src="data.bgImg" alt="" class="fade" ref="cvsBackgroundImg">
-				</div>
-				<div class="addText" ref="addText">
-					<input class="item-text" 
-						:class="{'chiose-text':choiseText==key}" 
-						v-for="(item,key) in data.textList" 
+        <div class="error" v-if="error">网络连接错误</div>
+        <div v-if="!error">
+	        <div class="dw-container" >
+				<div class="iconfont icon-prev left swiper-button-prev" ref="swiperLeft" @click="prev"></div>
+				<div class="iconfont icon-you right swiper-button-next" ref="swiperRight" @click="next"></div>
+	            <div class="draw-content"  :class="[animation?'opac1':'opac0']" ref="cvs"  @click="getItems" >
+	                <div class="bgImg" ref="cvsBackground">
+						<img :src="data.bgImg" alt="" class="fade" ref="cvsBackgroundImg">
+					</div>
+					<div class="addText" ref="addText">
+						<input class="item-text" 
+							:class="{'chiose-text':choiseText==key}" 
+							v-for="(item,key) in data.textList" 
+							:key="key" 
+							@click="getTextItems($event,item,key)"
+							@touchstart="getMoveText($event,item,key)"
+							@touchmove="dragText($event,item,key)"
+							@blur="endEdit($event,item,key)"
+							:style="{
+								top:item.style.top,
+								left:item.style.left,
+								color:item.style.color,
+								'font-size':item.style.fontSize+'px',
+								'font-weight':item.style.fontWeight
+							}"
+							:value="item.text"
+							:ischoise="choiseText==key"
+							/>
+					</div>
+	                <div class="avad-items" >
+	                    <div class="avad-img" v-for="(item,key) in data.list" 
 						:key="key" 
-						@click="getTextItems($event,item,key)"
-						@touchstart="getMoveText($event,item,key)"
-						@touchmove="dragText($event,item,key)"
-						@blur="endEdit($event,item,key)"
-						:style="{
-							top:item.style.top,
-							left:item.style.left,
-							color:item.style.color,
-							'font-size':item.style.fontSize+'px',
-							'font-weight':item.style.fontWeight
-						}"
-						:value="item.text"
-						:ischoise="choiseText==key"
-						/>
-				</div>
-                <div class="avad-items" >
-                    <div class="avad-img" v-for="(item,key) in data.list" 
-					:key="key" 
-					:style="{width:item.width+'%',
-						height:item.height+'%',
-						left:item.left+'%',
-						top:item.top+'%',
-						transform:'rotate('+item.rotate+'deg)',
-						}" >
-                        <div v-if="!item.pic" class="iconfont icon-jia3"></div>
-						<img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="onlodImage fade" ref="onloadImage"></div>
-		<!-- canvas 预览 画图 -->
-		<div class="preview-wrap" v-show="previewCVS">
-			<div class='preview-cont'>
-				<div class="preview-bg">
-					<div class="preview-header">预览
-						<input type="button" value="X" @click="previewCVS=false" class="close" name="">
-					</div>
-					<div class="preview-body">
-						<canvas ref="tempCvas"></canvas>
-					</div>
-					<div class="saveOverPic">
-						<div class="save-in-tpl" @click="saveToTpl">确定保存</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!-- 设置插入图片微调modal -->
-        <div class="ctrl" v-show="picItemCtrl">
-        	<div class="titles">
-        		<span>微调</span>
-        		<div class="coloseCtrl" @click="closeCtrl">x</div>
-        	</div>
-        	<!-- 设置文字微调modal -->
-			<div class="edit-text-ctrl" v-show="fontEdit">
-				<div class="edit-text-header">文字位置请拖动文字</div>
-				<div class="ctrl-i">
-					<div class="btn" @click="setFontSize(1)">字体+</div>
-	                <div class="value">{{textItems?textItems.style.fontSize:0}}</div>
-	                <div class="btn"  @click="setFontSize(-1)">字体-</div>
-				</div>
-				<div class="ctrl-i">
-					<div class="btn" @click="setFontWeight(1)">粗体</div>
-	                <div class="value">{{textItems&&textItems.style.fontWeight==300?'细体':'粗体'}}</div>
-	                <div class="btn"  @click="setFontWeight(0)">细体</div>
-				</div>
-				<div class="edit-text-footer">
-					<div class="change-text-color" @click="changeTextColor">修改文字颜色</div>
-	                <colorPicker 
-	                	@cancelColor="cancelColor" 
-	                	@changeColor="changeColor" 
-	                	v-show="colorWrap">
-	                </colorPicker>
-				</div>
-			</div>
-            <div class="ctrl-i">
-                <div class="btn" @click="sliceLeft(-1)">左移-</div>
-                <div class="value">{{computedValue.left}}</div>
-                <div class="btn" @click="sliceLeft(1)">右移+</div>
-            </div>
-            <div class="ctrl-i">
-                <div class="btn" @click="sliceTop(-1)">上移+</div>
-                <div class="value">{{computedValue.top}}</div>
-                <div class="btn" @click="sliceTop(1)">下移-</div>
-            </div>
-            <div class="ctrl-i">
-                <div class="btn" @click="sliceSize(1,'width')">宽度+</div>
-                <div class="value">{{computedValue.width}}</div>
-                <div class="btn" @click="sliceSize(-1,'width')">宽度-</div>
-            </div>
-            <div class="ctrl-i">
-                <div class="btn" @click="sliceSize(1,'height')">高度+</div>
-                <div class="value">{{computedValue.height}}</div>
-                <div class="btn" @click="sliceSize(-1,'height')">高度-</div>
-            </div>
-            <div class="ctrl-i">
-                <div class="btn" @click="changRoate(-1)">旋转+</div>
-                <div class="value">{{computedValue.rotate}}</div>
-                <div class="btn" @click="changRoate(1)">旋转-</div>
-            </div>
-			
-        </div>
-        <div class="ctrl-alumb-wrap">
-        	<div class="saveImg" @click="addTextBtn">添加文字</div>
-			<div class="saveImg" @click="preview">预览高清,并去保存当前相片</div>
-			<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
-        </div>
-		<footer class="footer">
-			<div class="img-items">
-				<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
-					<div class="swiper-wrapper">
-						<div class="swiper-slide" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
-							<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
+						:style="{width:item.width+'%',
+							height:item.height+'%',
+							left:item.left+'%',
+							top:item.top+'%',
+							transform:'rotate('+item.rotate+'deg)',
+							}" >
+	                        <div v-if="!item.pic" class="iconfont icon-jia3"></div>
+							<img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	        <div class="onlodImage fade" ref="onloadImage"></div>
+			<!-- canvas 预览 画图 -->
+			<div class="preview-wrap" v-show="previewCVS" >
+				<div class='preview-cont'>
+					<div class="preview-bg">
+						<div class="preview-header">预览
+							<input type="button" value="X" @click="previewCVS=false" class="close" name="">
 						</div>
-				 	</div>
-					<!-- Add Pagination --> 
-        			<div class="swiper-pagination"></div>
-				</div> 
-			</div>
-		</footer>
-	<!-- Modals -->	
-        <div class="slicePic" v-show="isChange" :style="cutRect" ref="cutRectDom">
-            <div class="cut" @click="cutPic">裁剪</div>
-            <div class="upload" @click="uploadPic">修改图片</div>
-            <div class="delete" @click="deletePic">删除</div>
-        </div>
-		<!-- 修改，上传 dom  -->
-		<div class="changeImg" v-show="isChangeImg">
-			<div class="chang-img-wrap">
-				<div class="wrap-body">
-					<div class="close-change" @click="closeChangeImg">关闭</div>
-					<div class="upload">上传图片
-						<input class="getFiles" type="file" name="" 
-						@change="getFiles" ref="uploadFiles"
-						accept=".jpg, .jpeg, .png"  >
-					</div>
-					<div class="change" @click="changePics">修改图片</div>
-					<!-- <div class="success" @click="drawItems">确定上传</div> -->
-					<div class="readerImg ">
-						<img :src="itemsFile" alt="" ref="readFile">
+						<div class="preview-body">
+							<canvas ref="tempCvas"></canvas>
+						</div>
+						<div class="saveOverPic">
+							<div class="save-in-tpl" @click="saveToTpl">确定保存</div>
+						</div>
 					</div>
 				</div>
-				
 			</div>
+			<!-- 设置插入图片微调modal -->
+	        <div class="ctrl" v-show="picItemCtrl" >
+	        	<div class="titles">
+	        		<span>微调</span>
+	        		<div class="coloseCtrl" @click="closeCtrl">x</div>
+	        	</div>
+	        	<!-- 设置文字微调modal -->
+				<div class="edit-text-ctrl" v-show="fontEdit">
+					<div class="edit-text-header">文字位置请拖动文字</div>
+					<div class="ctrl-i">
+						<div class="btn" @click="setFontSize(1)">字体+</div>
+		                <div class="value">{{textItems?textItems.style.fontSize:0}}</div>
+		                <div class="btn"  @click="setFontSize(-1)">字体-</div>
+					</div>
+					<div class="ctrl-i">
+						<div class="btn" @click="setFontWeight(1)">粗体</div>
+		                <div class="value">{{textItems&&textItems.style.fontWeight==300?'细体':'粗体'}}</div>
+		                <div class="btn"  @click="setFontWeight(0)">细体</div>
+					</div>
+					<div class="edit-text-footer">
+						<div class="change-text-color" @click="changeTextColor">修改文字颜色</div>
+		                <colorPicker 
+		                	@cancelColor="cancelColor" 
+		                	@changeColor="changeColor" 
+		                	v-show="colorWrap">
+		                </colorPicker>
+					</div>
+				</div>
+	            <div class="ctrl-i">
+	                <div class="btn" @click="sliceLeft(-1)">左移-</div>
+	                <div class="value">{{computedValue.left}}</div>
+	                <div class="btn" @click="sliceLeft(1)">右移+</div>
+	            </div>
+	            <div class="ctrl-i">
+	                <div class="btn" @click="sliceTop(-1)">上移+</div>
+	                <div class="value">{{computedValue.top}}</div>
+	                <div class="btn" @click="sliceTop(1)">下移-</div>
+	            </div>
+	            <div class="ctrl-i">
+	                <div class="btn" @click="sliceSize(1,'width')">宽度+</div>
+	                <div class="value">{{computedValue.width}}</div>
+	                <div class="btn" @click="sliceSize(-1,'width')">宽度-</div>
+	            </div>
+	            <div class="ctrl-i">
+	                <div class="btn" @click="sliceSize(1,'height')">高度+</div>
+	                <div class="value">{{computedValue.height}}</div>
+	                <div class="btn" @click="sliceSize(-1,'height')">高度-</div>
+	            </div>
+	            <div class="ctrl-i">
+	                <div class="btn" @click="changRoate(-1)">旋转+</div>
+	                <div class="value">{{computedValue.rotate}}</div>
+	                <div class="btn" @click="changRoate(1)">旋转-</div>
+	            </div>
+				
+	        </div>
+	        <div class="ctrl-alumb-wrap" >
+	        	<div class="saveImg" @click="addTextBtn">添加文字</div>
+				<div class="saveImg" @click="preview">预览高清,并去保存当前相片</div>
+				<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
+	        </div>
+			<footer class="footer">
+				<div class="img-items">
+					<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
+						<div class="swiper-wrapper">
+							<div class="swiper-slide" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
+								<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
+							</div>
+					 	</div>
+						<!-- Add Pagination --> 
+	        			<div class="swiper-pagination"></div>
+					</div> 
+				</div>
+			</footer>
+		<!-- Modals -->	
+	        <div class="slicePic" v-show="isChange" :style="cutRect" ref="cutRectDom">
+	            <div class="cut" @click="cutPic">裁剪</div>
+	            <div class="upload" @click="uploadPic">修改图片</div>
+	            <div class="delete" @click="deletePic">删除</div>
+	        </div>
+			<!-- 修改，上传 dom  -->
+			<div class="changeImg" v-show="isChangeImg">
+				<div class="chang-img-wrap">
+					<div class="wrap-body">
+						<div class="close-change" @click="closeChangeImg">关闭</div>
+						<div class="upload">上传图片
+							<input class="getFiles" type="file" name="" 
+							@change="getFiles" ref="uploadFiles"
+							accept=".jpg, .jpeg, .png"  >
+						</div>
+						<div class="change" @click="changePics">修改图片</div>
+						<!-- <div class="success" @click="drawItems">确定上传</div> -->
+						<div class="readerImg ">
+							<img :src="itemsFile" alt="" ref="readFile">
+						</div>
+					</div>
+					
+				</div>
+			</div>
+			<!-- loading -->
+	        <loading v-show="isloading">
+	        	<div slot="loadingName">
+	        		{{ loadingCont }}
+	        	</div>
+	        </loading>
+			<!-- 裁剪组件 -->
+	        <cut :aspectr="ratio" :class="isCut?'show':'hidden'" 
+				@cancel="cancel" 
+				@isload="isload"
+				@closeload="closeload"
+				@setCutImage="setCutImage"
+				@showLoading='showLoading'
+				:cutUrl="iscutUrl"></cut>
+			<!-- 修改图片组件 -->
+			<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
 		</div>
-		<!-- loading -->
-        <loading v-show="isloading">
-        	<div slot="loadingName">
-        		{{ loadingCont }}
-        	</div>
-        </loading>
-		<!-- 裁剪组件 -->
-        <cut :aspectr="ratio" :class="isCut?'show':'hidden'" 
-			@cancel="cancel" 
-			@isload="isload"
-			@closeload="closeload"
-			@setCutImage="setCutImage"
-			@showLoading='showLoading'
-			:cutUrl="iscutUrl"></cut>
-		<!-- 修改图片组件 -->
-		<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
     </section>
 </template>
 <script>
@@ -193,34 +196,10 @@
 	import {responseData} from './data.js'
 	import {mapState,mapActions} from 'vuex'
 	import {upload,getAlbum,uploadAlbums} from '../service/album'
-	const collection= [{
-		//背景
-		bgImg:"static/bgc/aa.png",
-		//列表单个ID
-		id:"img_list_0",
-		//主视图比例
-		cvsRatio:10/7,
-		//文字数据
-		textList:[],
-		//相片元素数据
-		//除了opcity,rotate为实数，其他都为百分比
-		list:[{
-			width:40,
-			height:30,
-			top:10,
-			left:10,
-			rotate:0,
-			id:'imageone',
-			opcity:1,
-			pic:"static/bgc/1.jpg",
-			aspectRatio:9/3,
-		}],
-		
-	}]
-
     export default{
         data(){
             return{
+            	error:false,
                 name:'showIndex',
                 //loading 开关
                 isloading:false,
@@ -360,6 +339,11 @@
         		this.isloading=true
         		this.loadingCont="正在初始化请稍后..."
 				let res=await getAlbum({id:1})
+				if( !res.code ){
+					this.error=true
+					this.isloading=false
+					return
+				}
         		this.loadingCont="数据初始化完成，正在加载素材"
         		let theme=res.data.theme;
         		let data=res.data.list
@@ -819,6 +803,20 @@
 <style lang="scss" scoped>
 	@import "../style/swiper.scss";
 	@import "../style/modal.scss";
+	.error{
+		position:fixed;
+		left: 0;
+		top:105px;
+		right:0;
+		bottom:0;
+		background:#666;
+		color:#fff;
+		display:flex;
+		align-items:center;
+		justify-content:center;
+		z-index:999;
+
+	}
 	.swiper-slide{
 		background:#ccc;
 		&.active{
