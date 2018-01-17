@@ -35,7 +35,7 @@
 <script>
 	import {mapState,mapActions} from 'vuex'
 	import Cropper from 'cropperjs'
-	import {upload,uploadBolb} from '../service/album'
+	import {uploadBolb} from '../service/album'
 	import '../style/cropper.scss'
 	export default{
 		props:['aspectr','cutUrl'],
@@ -57,7 +57,7 @@
 					aspectRatio: this.aspectr,  
 					viewMode: 1,  
 					background:true,  
-					zoomable:false,  
+					zoomable:true,  
 					dragMode:'move',
 					ready: function () {  
 						self.croppable = true;  
@@ -70,17 +70,17 @@
 			},
 			//显示裁剪预览
 			showCanvas(){
-				this.isDroop=true;
 				let canvasWrap=this.$refs.canvasWrap;
 				let canvas=this.cropper.getCroppedCanvas()
 				if( canvasWrap.children.length>0 ){
 					canvasWrap.removeChild(canvasWrap.children[0])
 				}
 				canvasWrap.appendChild(canvas)
+				this.isDroop=true;
 			},
 			//保存裁剪素材
 			async getSave(){
-				this.$emit('showLoading',true)
+				this.$parent.isloading=true
 				let canvasWrap=this.$refs.canvasWrap;
 				let canvas=canvasWrap.children[0];
 				let url=canvas.toDataURL()
@@ -89,7 +89,6 @@
 				let redData=await uploadBolb(file)
 				this.$emit('setCutImage',redData.img)
 				this.isDroop=false
-				this.$emit('showLoading',false)
 				this.$emit('cancel')
 			},
 			//重置裁剪
@@ -191,11 +190,12 @@
 			color:#fff;
 			display:flex;
 			justify-content:center;
+			background:#333;
+			padding:10px;
 			>div{
 				padding:15px 30px;
 				text-align: center;
 				border:1px solid #ccc;
-				border-radius: 5px;
 				margin:10px 30px;
 				font-size:32px;
 			}	
@@ -209,23 +209,21 @@
 				background:#ccc;
 			}
 		}
-
 		/**
 			** modal end
 		*/
-
 		.wrap{
 			width:100%;
 			height:100%;
 			position:relative;
-			background:#fff;
+			background:url('./static/bg.png');
 			.layzbody{
 				height:100%;
 				width:100%;
 				overflow-y:auto;
 				.imgwrap{
 					width:100%;
-					top:300px;
+					top:150px;
 					bottom:0;
 					left:0;
 					right:0;
@@ -250,10 +248,9 @@
 	}
 	.getsave{
 		display:inline-block;
-		border:1px solid #ccc;
+		border:1px solid #000;
 		background:#090;
 		padding:15px 30px;
-		border-radius: 5px;
 		color:#fff;
 	}
 </style>

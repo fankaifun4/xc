@@ -1,7 +1,8 @@
 <template>
     <section class="choiseWrap">
         <header class="header">
-            <div @click="choiseItems">确定返回</div>
+            <div class="choiseItems" @click="choiseItems">确定返回</div>
+            <div class="cancelItems" @click="cancelItems">取消</div>
         </header>
         <div class="images-wrap" ref='imagesWrap'>
             <div v-for="(item,key) in imglists" :key="key" :class="{'isChoise':active==key}"  @click="togetImg(key)">
@@ -37,7 +38,6 @@ export default {
           let id=this.$route.query.id
           this.$emit('changeImgUrl',this.choiseImg)
           this.$emit('hidden')
-        //   this.$router.push({name:'pagehome',query:{ id:id,imgurl: this.choiseImg }})
       },
       setImage(){
          this.imglists=this.imglist
@@ -49,6 +49,9 @@ export default {
       },
       goback(){
            this.$emit('hidden')
+      },
+      cancelItems(){
+          this.$emit('hidden')
       }
   }
 }
@@ -66,11 +69,31 @@ export default {
     }
     .header{
         height:80px;
-        line-height: 80px;
-        border-bottom:1px solid #ccc;
-        font-size: 34px;
-        padding:0 15px;
-        background:#fff;
+        padding:15px;
+        background:#333;
+        color:#fff;
+        .choiseItems{
+           margin-left:10px;
+           background:#f00;
+           display:inline-block;
+           height:70px;
+           width:180px;
+           text-align: center;
+           line-height: 69px;
+           font-size:36px;
+           border:3px solid #2f0;
+        }
+        .cancelItems{
+          margin-left:10px;
+           background:#ccc;
+           display:inline-block;
+           height:70px;
+           width:180px;
+           text-align: center;
+           line-height: 69px;
+           font-size:36px;
+           border:3px solid #f20;
+        }
     }
     .images-wrap {
        display: flex;
@@ -80,9 +103,9 @@ export default {
             width:30%;
             padding:15px;
             box-sizing: border-box;
-            border:3px solid rgb(5, 78, 17);
+            border:3px solid rgba(0,0,0,.8);
+            background:rgba(255,255,255,.6);
             margin:10px;
-            background:#fff;
             transition:all .5s;
             >img{
                 width:100%;
@@ -94,7 +117,7 @@ export default {
                 right: 0;
                 bottom:0;
                 top:0;
-                width:300px;
+                width:400px;
                 height: 200px;
                 margin:auto;
                 display:flex;
@@ -102,12 +125,13 @@ export default {
                 align-items: center;
                 >div{
                     margin:15px 0;
+                    font-size: 36px;
                 }
             }
        }
        .isChoise{
            border:3px solid rgb(192, 17, 17);
-           background:rgb(25, 4, 92)
+           background:rgba(80,200,0,.5)
        }
     }
 </style>

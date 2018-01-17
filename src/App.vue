@@ -29,6 +29,7 @@ export default {
   min-height:100%;
   background:url('./static/bg.png');
   overflow-y:hidden;
+  box-sizing: border-box;
 }
 .router-pop-out-enter-active,
   .router-pop-out-leave-active,

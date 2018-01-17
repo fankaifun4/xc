@@ -1,5 +1,5 @@
 <template>
-    <section class="container">
+    <section class="container" ref="container">
         <header class="header">
         	<span class="header-title">
         		相册制作
@@ -158,11 +158,8 @@
 							@change="getFiles" ref="uploadFiles"
 							accept=".jpg, .jpeg, .png"  >
 						</div>
+						<!-- <div class="success" @click="drawItems">确定</div> -->
 						<div class="change" @click="changePics">修改图片</div>
-						<!-- <div class="success" @click="drawItems">确定上传</div> -->
-						<div class="readerImg ">
-							<img :src="itemsFile" alt="" ref="readFile">
-						</div>
 					</div>
 					
 				</div>
@@ -174,7 +171,7 @@
 	        	</div>
 	        </loading>
 			<!-- 裁剪组件 -->
-	        <cut :aspectr="ratio" :class="isCut?'show':'hidden'" 
+	        <cut :aspectr="ratio" v-show="isCut" 
 				@cancel="cancel" 
 				@isload="isload"
 				@closeload="closeload"
@@ -202,7 +199,7 @@
             	error:false,
                 name:'showIndex',
                 //loading 开关
-                isloading:false,
+                isloading:true,
                 //裁剪开关
                 isCut:false,
                 //裁剪的比例 16:9·4:3··
@@ -413,6 +410,7 @@
 			setCutImage(url){
 				if(!url) {
 					alert("上传失败,请检查网络是否畅通")
+					this.isloading=false
 					return
 				}
 				this.current.pic=this.baseUrl+url
@@ -420,6 +418,7 @@
 				this.$store.dispatch('setImg',url)
 				this.isCut=false
 				this.isChangeImg=false
+				this.isloading=false
 			},
 			showLoading(value){
 				this.isloading=value
@@ -456,22 +455,21 @@
 			getFiles(){
 				let cur=this.current
 				let uploadFiles=this.$refs.uploadFiles
-				let fs=new FileReader()
-				fs.readAsDataURL(uploadFiles.files[0])
-				fs.onload=(e)=>{
-					this.itemsFile=e.target.result
-					this.isCut=true
-					this.current.pic=this.itemsFile
-					this.iscutUrl=this.itemsFile
-					if(!cur.pic) {
-						alert('没有裁剪的图片，请先添加图片')
-						this.isChange=false
-						return
-					}
-					this.ratio=cur.aspectRatio
-					this.isCut=true
-					this.isChange=false
+				if( !uploadFiles.files[0] ) return
+				if(uploadFiles.files[0].size>1024*1024*4) {
+					alert('图片必须小于4M')
+					return
 				}
+				let blobImg=this.getFileUrl(uploadFiles)
+				this.loadingCont=""
+				this.iscutUrl=blobImg
+				this.isCut=true
+				if(!this.iscutUrl) {
+					alert('没有裁剪的图片，请先添加图片')
+					this.isChange=false
+					return
+				}
+				this.ratio=cur.aspectRatio
 			},
 			//修改图片
 			changePics(){
@@ -566,7 +564,6 @@
 			sliceSize(value,name){
 				if( !this.current) return 
 				if( !this.current.pic ) return
-				
 				let cur=this.current
 				let p=this.getPosition(cur)
                 this.computPX(cur)
@@ -618,32 +615,11 @@
 		            url = window.URL.createObjectURL(soure.files[0]);
 		        } else if (navigator.userAgent.indexOf("Chrome") > 0) { // Chrome 
 		            url = window.URL.createObjectURL(soure.files[0]);
+		        }else{
+		        	url = window.URL.createObjectURL(soure.files[0]);
 		        }
 		        return url;
 		    },
-			//上传图片
-			async drawItems(){
-				this.isloading=true
-				let cur=this.current
-				let uploadFiles=this.$refs.uploadFiles
-				if( !uploadFiles.files[0] ) return
-				if(uploadFiles.files[0].size>1024*1024*4) {
-					alert('图片必须小于4M')
-					return
-				}
-				let blobImg=this.getFileUrl(uploadFiles)
-				let bob=uploadFiles.files[0]
-				let file=new FormData()
-				file.append('file',bob)
-				let resData=await upload(file)
-				this.isloading=false
-				let url="http://tp.taodama.net/"
-				url+=resData.img
-				cur.pic=url
-				cur.itemBlob=blobImg
-				this.isChangeImg=false
-				this.$store.dispatch('setImg',url)
-			},
 			//添加文字
 			addTextBtn(){
 				let addText=this.$refs.addText
@@ -796,8 +772,34 @@
 					}
 				}
 
+			},
+			overHidden(value){
+				let body=document.body
+        		if(value){
+        			body.style.overflow='hidden'
+        		}else{
+        			body.style.overflow='scroll'
+        		}
 			}
-        }     
+        },
+        watch:{
+        	isloading(prev,old){
+
+        		this.overHidden(prev)
+        	},
+        	isChangeImg(prev,old){
+        		this.overHidden(prev)
+        	},
+        	isCut(prev,old){
+        		this.overHidden(prev)
+        	},
+        	choiseShow(prev,old){
+        		this.overHidden(prev)
+        	},
+        	previewCVS(prev,old){
+        		this.overHidden(prev)
+        	}
+        }    
     }
 </script>
 <style lang="scss" scoped>
@@ -842,15 +844,14 @@
 			margin-left:150px;
 		}
 	}
-
     .container{
         width:100%;
-       
     }
     .dw-container{
         padding:25px;
         box-sizing: border-box;
 		position:relative;
+		min-height:300px;
 		.left,.right{
 			width:80px;
 			height:80px;
@@ -1097,7 +1098,6 @@
 				>div{
 					padding:20px 25px;
 					border:1px solid #cecece;
-					border-radius: 5px;
 					color:#fff;
 					font-size:34px;
 				}
@@ -1179,5 +1179,9 @@
 			background:#fff;
 		}
 	}
-	
+	.footer{
+		width:100%;
+		box-sizing:border-box;
+		overflow-y:hidden;
+	}
 </style>
