@@ -35,6 +35,7 @@
 							}"
 							:value="item.text"
 							:ischoise="choiseText==key"
+							placeholder="请输入文字"
 							/>
 					</div>
 	                <div class="avad-items" >
@@ -171,7 +172,7 @@
 	        	</div>
 	        </loading>
 			<!-- 裁剪组件 -->
-	        <cut :aspectr="ratio" v-show="isCut" 
+	        <cut :aspectr="ratio" :class="[isCut?'show':'hidden']" 
 				@cancel="cancel" 
 				@isload="isload"
 				@closeload="closeload"
@@ -190,9 +191,9 @@
 	import colorPicker from '@/components/color-picker'
 	import drawcvs from '@/mixins/draw-cvs'
 	import Swiper from 'swiper'
-	import {responseData} from './data.js'
 	import {mapState,mapActions} from 'vuex'
 	import {upload,getAlbum,uploadAlbums} from '../service/album'
+	const reloadimg=require('../../static/bg.png')
     export default{
         data(){
             return{
@@ -273,6 +274,8 @@
         methods:{
 			prev(){
 				if(this.swiper.isBeginning) return
+				this.current=null
+				this.isChange=false
 				let cvs=this.$refs.cvs
 				this.animation=false
 				setTimeout(()=>this.animation=true,200)
@@ -285,6 +288,8 @@
 			},
 			next(){
 				if(this.swiper.isEnd) return;
+				this.current=null
+				this.isChange=false
 				let cvs=this.$refs.cvs
 				this.animation=false
 				setTimeout(()=>this.animation=true,200)
@@ -388,11 +393,12 @@
 					let p=this.getPosition(item)
 					if( cx>=p.l && cy>=p.t && cx<=p.l+p.w && cy<=p.t+p.h ){
 						this.current=item
+						this.iscutUrl=reloadimg
 						this.computPX(this.current)
 						this.isChange=!this.isChange
 						this.cutRect={
 							left:p.l+this.cvs.offsetLeft+'px',
-							top:p.t+15+'px'
+							top:p.t+30+'px'
 						}
 					}
 				})
@@ -448,6 +454,7 @@
 				
 		    },
             uploadPic(){
+            	this.iscutUrl=reloadimg
 				this.isChange=false
 				this.isChangeImg=true
 			},
@@ -484,8 +491,14 @@
             cutPic(){
 				let cur=this.current
 				let cvs=this.$refs.tempCvas
+				let id=cur.id
+				let img=document.querySelector('#'+id)
 				this.iscutUrl=cur.pic
-				if(!cur.pic) {
+				if( img && !img.complete ){
+					alert("请等待相册元素加载完成")
+					return
+				}
+				if(!this.iscutUrl) {
 					alert('没有裁剪的图片，请先添加图片')
 					this.isChange=false
 					return
@@ -511,6 +524,7 @@
             deletePicUrl(){
             	this.itemsFile=null
             	this.$refs.uploadFiles.value=''
+            	this.iscutUrl=reloadimg
             },
             //计算显示位置
 			computPX(current){
@@ -580,6 +594,7 @@
 			//主操作区添加背景图片
 			drawBgImg(model,key){
 				this.data=model
+				this.isChange=false
 				let cvsBackground=this.$refs.cvsBackground
 				let cvs=this.$refs.cvs
 				let viweWidth=cvsBackground.clientWidth
@@ -634,7 +649,7 @@
 						fontWeight:300,
 						relFontSize:textSize/currentCVS.clientWidth
 					},
-					text:"请在此输入文字"
+					text:""
 				})
 			},
 			//获取文字域
@@ -1057,7 +1072,7 @@
 	.slicePic{
 		position:absolute;
 		z-index:400;
-		width:300px;
+		width:360px;
 		height:65px;
 		background:#000;
 		color:#fff;

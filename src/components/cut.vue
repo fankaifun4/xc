@@ -3,9 +3,9 @@
 		<div class="wrap">
 			<div class="layzbody">
 				<div class="ctrl">
-					<div class="save" data-method="getCroppedCanvas" @click="showCanvas" >确定</div>
-					<div class="cancel" @click="cancal">取消</div>
-					<div class="reset" @click="reset" >重置</div>
+					<div class="save" data-method="getCroppedCanvas" @touchend="showCanvas" >确定</div>
+					<div class="cancel" @touchend="cancal">取消</div>
+					<div class="reset" @touchend="reset" >重置</div>
 				</div>
 				<div class="imgwrap">
 					<img :src="cutUrl" alt="" ref="cutImg">
@@ -19,13 +19,13 @@
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
-                <button class="close" data-dismiss="modal" type="button" @click="isDroop=false">&times;</button>
+                <button class="close" data-dismiss="modal" type="button" @touchend="isDroop=false">&times;</button>
                 <h4 class="modal-title" id="getCroppedCanvasTitle">截取图像</h4>
               </div>
               <div class="modal-body" ref="canvasWrap"></div>
 			  <div class="ctrl">
-				   <div class="getsave" @click="getSave">确定</div>
-				   <div class="cancel" @click="isDroop=false">取消</div>
+				   <div class="getsave" @touchend="getSave">确定</div>
+				   <div class="cancel" @touchend="isDroop=false">取消</div>
 			  </div>
             </div>
           </div>
@@ -35,7 +35,7 @@
 <script>
 	import {mapState,mapActions} from 'vuex'
 	import Cropper from 'cropperjs'
-	import {uploadBolb} from '../service/album'
+	import {upload} from '../service/album'
 	import '../style/cropper.scss'
 	export default{
 		props:['aspectr','cutUrl'],
@@ -58,9 +58,10 @@
 					viewMode: 1,  
 					background:true,  
 					zoomable:true,  
+					checkCrossOrigin:false,
 					dragMode:'move',
+					restore:true,
 					ready: function () {  
-						self.croppable = true;  
 					}  
 				})
 			},
@@ -81,15 +82,15 @@
 			//保存裁剪素材
 			async getSave(){
 				this.$parent.isloading=true
-				let canvasWrap=this.$refs.canvasWrap;
-				let canvas=canvasWrap.children[0];
-				let url=canvas.toDataURL()
-				var file = new FormData()
-				file.append('file', url)
-				let redData=await uploadBolb(file)
-				this.$emit('setCutImage',redData.img)
-				this.isDroop=false
-				this.$emit('cancel')
+				this.cropper.getCroppedCanvas().toBlob(async (boble)=>{
+					var formData = new FormData()
+					formData.append('file',boble,'jpg')
+					let uploadData = await upload(formData)
+					this.$parent.isloading=false
+					this.$emit('setCutImage',uploadData.img)
+					this.isDroop=false
+					this.$emit('cancel')
+				})
 			},
 			//重置裁剪
 			reset(){
@@ -98,7 +99,7 @@
 		},
 		watch:{
 			//监听缓存图片路径如果改变则重新初始化裁剪
-			'cutUrl':function(){
+			'cutUrl':function(prev,old){
 				if(this.cropper){
 					 this.cropper.replace(this.cutUrl)
 					 this.cropper.setAspectRatio(this.aspectr)
