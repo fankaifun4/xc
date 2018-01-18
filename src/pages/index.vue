@@ -730,7 +730,7 @@
 				if(!this.data.id) return
 				let temp_bg=this.$refs.temp_bg_elemts
 				let DataId=this.data.id
-				let base64Data=cvs.toDataURL('image/png')
+				let base64Data=cvs.toDataURL('image/jpeg',.9)
 				if(temp_bg.length>0){
 					temp_bg.forEach(item=>{
 						if( item.id== DataId){
