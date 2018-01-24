@@ -1,6 +1,6 @@
 <template>
   <section class="al-list">
-      <header class="header">
+      <header class="header" v-if="!$route.query.hidden">
           <span class="fl" @click="goBack">
               <span class="iconfont  icon-prev"></span>
         		返回
@@ -43,12 +43,11 @@
             imgshow
         },
         mounted () {
+            console.log()
             this.id=this.$route.query.id
             this.getData(this.id)
         },
-        computed:{
-           
-        },
+        computed:{},
         methods:{
             async getData(id){
                 let res = await getMyAlbList({id:id})
