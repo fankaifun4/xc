@@ -1,12 +1,12 @@
 <template>
   <section class="al-list">
-      <header class="header" v-if="!$route.query.hidden">
-          <span class="fl" @click="goBack">
+      <header class="header">
+          <span class="fl" @click="goBack"  v-if="!canBack">
               <span class="iconfont  icon-prev"></span>
         		返回
         	</span>
-        	<span class="header-title">
-        		查看我的相册
+        	<span class="header-title" :class="{'center':canBack}">
+        		我的相册
         	</span>
         </header>
       <div v-if="!hasno" class="swiper-data">
@@ -36,15 +36,17 @@
             id:null,
             hasno:true,
             tip:"",
-            swiper:null
+            swiper:null,
+            canBack:null
           }  
         },
         components:{
             imgshow
         },
         mounted () {
-            console.log()
+            
             this.id=this.$route.query.id
+            this.canBack=this.$route.query.hidden?true:false
             this.getData(this.id)
         },
         computed:{},
@@ -111,6 +113,9 @@
     }
     .header-title{
         margin-left:-80px;
+    }
+    .center{
+        margin-left:0;
     }
 }
 .swiper-data{

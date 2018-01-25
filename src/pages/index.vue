@@ -340,7 +340,12 @@
         	async getData(){
         		this.isloading=true
         		this.loadingCont="正在初始化请稍后..."
-				let res=await getAlbum({id:1})
+        		if(!this.$route.query.id){
+        			alert('您还没有登录，请登陆后重试')
+        			return
+        		}
+        		let modelID=this.$route.query.id
+				let res=await getAlbum({id:modelID})
 				if( !res.code ){
 					this.error=true
 					this.isloading=false

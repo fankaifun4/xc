@@ -1,6 +1,12 @@
 import axios from 'axios'
+import {user_id} from './dev'
+
 axios.defaults.baseURL = 'http://tp.taodama.net/mobile/photo'
 axios.defaults.timeout = 60000;
+
+const getUserID=()=>{
+    axios.get('')
+}
 
 const get = function(url, params = {}) {
     let query = params || {}
