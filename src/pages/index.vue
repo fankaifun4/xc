@@ -257,7 +257,8 @@
 				animation:true,
 				isActive:0,
 				user_id:null,
-				modelId:null
+				modelId:null,
+				goods_id:null
             }
 		},
         components:{
@@ -349,6 +350,8 @@
         			return
         		}
         		this.modelId=this.$route.query.id
+				this.goods_id=this.$route.query.goods_id
+
 				let res=await getAlbum({id:this.modelId})
 				if( !res.code ){
 					this.error=true
@@ -785,6 +788,7 @@
 				let formData=new FormData()
 				formData.append('user_id',this.user_id)
 				formData.append('id',this.modelId)
+				formData.append('goods_id',this.goods_id)
 				formData.append('jsondata',JSON.stringify(jsondata))
 				if(imgIndex.length>0){
 					let alertIndex=imgIndex.toString()
