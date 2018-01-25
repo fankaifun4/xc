@@ -255,7 +255,9 @@
 				baseUrl:'http://tp.taodama.net/',
 				swiper:null,
 				animation:true,
-				isActive:0
+				isActive:0,
+				user_id:null,
+				modelId:null
             }
 		},
         components:{
@@ -342,14 +344,25 @@
         		this.loadingCont="正在初始化请稍后..."
         		if(!this.$route.query.id){
         			alert('您还没有登录，请登陆后重试')
+        			this.error=true
+        			this.isloading=false
         			return
         		}
-        		let modelID=this.$route.query.id
-				let res=await getAlbum({id:modelID})
+        		this.modelId=this.$route.query.id
+				let res=await getAlbum({id:this.modelId})
 				if( !res.code ){
 					this.error=true
 					this.isloading=false
 					return
+				}
+				console.log(res.user_id)
+				if( !res.user_id || res.user_id=='0' ){
+					alert('您还没有登录，请登陆后重试')
+					this.error=true
+					this.isloading=false
+        			return
+				}else{
+					this.user_id=res.user_id
 				}
         		this.loadingCont="数据初始化完成，正在加载素材"
         		let theme=res.data.theme;
@@ -767,12 +780,11 @@
 						imgIndex.push(item.index+1)
 					}
 				})
-				let uid=1;
-				let id=1;
+				
 				let jsondata = this.tempData 
 				let formData=new FormData()
-				formData.append('uid',uid)
-				formData.append('id',id)
+				formData.append('user_id',this.user_id)
+				formData.append('id',this.modelId)
 				formData.append('jsondata',JSON.stringify(jsondata))
 				if(imgIndex.length>0){
 					let alertIndex=imgIndex.toString()
