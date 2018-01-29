@@ -13,10 +13,6 @@ export default new Router({
         name: "listmain",
         component: r => require.ensure([], () => r(require('../pages/listmain.vue')), 'album'),
         children: [{
-            path: '/mylist',
-            name: 'mylist',
-            component: r => require.ensure([], () => r(require('../pages/getmyalbum.vue')), 'album'),
-        }, {
             path: "album",
             name: "album",
             component: r => require.ensure([], () => r(require('../pages/albumlist.vue')), 'album'),

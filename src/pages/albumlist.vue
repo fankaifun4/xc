@@ -72,7 +72,8 @@
                 },100)
             },
             goBack(){
-                this.$router.push({name:"mylist",query:{id:this.id}})
+                // this.$router.push({name:"mylist",query:{id:this.id}})
+                window.location="/Mobile/User/photo_list.html"
             }
         }
     }

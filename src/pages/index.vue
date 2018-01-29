@@ -4,7 +4,7 @@
         	<span class="header-title">
         		相册制作
         	</span>
-        	<span class="fr" @click="gomMyAlbum">
+        	<span class="fr">
         		我的相册<span class="iconfont icon-you"></span>
         	</span>
         </header>
@@ -302,9 +302,6 @@
 				this.isActive=index
 				this.drawBgImg(this.data,index)
 			},
-        	gomMyAlbum(){
-        		this.$router.push({name:"mylist"})
-        	},
         	//init加载元素
         	async loadingImg(item){
         		let promise=new Promise((resolve,reject)=>{
@@ -358,7 +355,6 @@
 					this.isloading=false
 					return
 				}
-				console.log(res.user_id)
 				if( !res.user_id || res.user_id=='0' ){
 					alert('您还没有登录，请登陆后重试')
 					this.error=true
@@ -761,9 +757,6 @@
 					})
 				}
 			},
-			async uploadAlums(params){
-				let res=await uploadAlbums(params)
-			},
 			sendAllData(){
 				let isOver=[]
 				this.tempData.forEach((item,index)=>{
@@ -809,6 +802,15 @@
 				}
 
 			},
+			async uploadAlums(params){
+				let res=await uploadAlbums(params)
+				if(res && res.code){
+					alert("提交成功")
+					window.loacltion="/mobile/photo/route?user_id="+tis.user_id+'&goods_id='+this.goods_id+'&id='+this.modelId
+				}else{
+					alert("提交失败")
+				}
+			},
 			overHidden(value){
 				let body=document.body
         		if(value){
@@ -820,7 +822,6 @@
         },
         watch:{
         	isloading(prev,old){
-
         		this.overHidden(prev)
         	},
         	isChangeImg(prev,old){
