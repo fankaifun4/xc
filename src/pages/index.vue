@@ -156,8 +156,7 @@
 						<div class="close-change" @click="closeChangeImg">关闭</div>
 						<div class="upload">上传图片
 							<input class="getFiles" type="file" name="" 
-							@change="getFiles" ref="uploadFiles"
-							accept=".jpg, .jpeg, .png"  >
+							@change="getFiles" ref="uploadFiles">
 						</div>
 						<!-- <div class="success" @click="drawItems">确定</div> -->
 						<div class="change" @click="changePics">修改图片</div>
@@ -479,6 +478,11 @@
 			getFiles(){
 				let cur=this.current
 				let uploadFiles=this.$refs.uploadFiles
+				let imgName=uploadFiles.files[0].name;
+				if( !imgName.match(/(.png|.jpeg|.jpg)$/ig) ){
+					alert('您选择的不是图片')
+					return;
+				}
 				if( !uploadFiles.files[0] ) return
 				if(uploadFiles.files[0].size>1024*1024*4) {
 					alert('图片必须小于4M')
@@ -661,12 +665,12 @@
 					style:{
 						left:'0',
 						top:'0',
-						color:'#000',
+						color:'#f00',
 						fontSize:textSize,
 						fontWeight:300,
 						relFontSize:textSize/currentCVS.clientWidth
 					},
-					text:""
+					text:"在此修改您的文字"
 				})
 			},
 			//获取文字域
@@ -788,7 +792,6 @@
 					let isNext=confirm('还有第'+alertIndex+'张未设置完成，暂时将当前相册保存到服务器？')
 					if(isNext){
 						this.uploadAlums(formData)
-						return
 					}else{
 						return
 					}
@@ -806,7 +809,8 @@
 				let res=await uploadAlbums(params)
 				if(res && res.code){
 					alert("提交成功")
-					window.loacltion="/mobile/photo/route?user_id="+tis.user_id+'&goods_id='+this.goods_id+'&id='+this.modelId
+					this.isloading=true;
+					window.location="mobile/photo/route?user_id="+this.user_id+'&goods_id='+this.goods_id+'&id='+this.modelId
 				}else{
 					alert("提交失败")
 				}

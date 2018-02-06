@@ -58,7 +58,7 @@ export default {
 </script>
 <style lang="scss" scoped>
     .choiseWrap{
-        position: absolute;
+        position: fixed;
         z-index:400;
         top:0;
         bottom:0;

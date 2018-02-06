@@ -3,9 +3,9 @@
 		<div class="wrap">
 			<div class="layzbody">
 				<div class="ctrl">
-					<div class="save" data-method="getCroppedCanvas" @touchend="showCanvas" >确定</div>
-					<div class="cancel" @touchend="cancal">取消</div>
-					<div class="reset" @touchend="reset" >重置</div>
+					<div class="save" data-method="getCroppedCanvas" @click="showCanvas" >确定</div>
+					<div class="cancel" @click="cancal">取消</div>
+					<div class="reset" @click="reset" >重置</div>
 				</div>
 				<div class="imgwrap">
 					<img :src="cutUrl" alt="" ref="cutImg">
@@ -19,13 +19,13 @@
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
-                <button class="close" data-dismiss="modal" type="button" @touchend="isDroop=false">&times;</button>
+                <button class="close" data-dismiss="modal" type="button" @click="isDroop=false">&times;</button>
                 <h4 class="modal-title" id="getCroppedCanvasTitle">截取图像</h4>
               </div>
               <div class="modal-body" ref="canvasWrap"></div>
 			  <div class="ctrl">
-				   <div class="getsave" @touchend="getSave">确定</div>
-				   <div class="cancel" @touchend="isDroop=false">取消</div>
+				   <div class="getsave" @click="getSave">确定</div>
+				   <div class="cancel" @click="isDroop=false">取消</div>
 			  </div>
             </div>
           </div>
