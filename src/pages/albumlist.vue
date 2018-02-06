@@ -44,7 +44,6 @@
             imgshow
         },
         mounted () {
-            
             this.id=this.$route.query.id
             this.canBack=this.$route.query.hidden?true:false
             this.getData(this.id)
@@ -73,7 +72,7 @@
             },
             goBack(){
                 // this.$router.push({name:"mylist",query:{id:this.id}})
-                window.location="Mobile/User/photo_list.html"
+                window.location=window.location.origin+"/Mobile/User/photo_list.html"
             }
         }
     }
