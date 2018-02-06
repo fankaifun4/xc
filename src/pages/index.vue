@@ -810,7 +810,7 @@
 				if(res && res.code){
 					alert("提交成功")
 					this.isloading=true;
-					window.location="mobile/photo/route?user_id="+this.user_id+'&goods_id='+this.goods_id+'&id='+this.modelId
+					window.location=window.location.origin+"/mobile/photo/route?user_id="+this.user_id+'&goods_id='+this.goods_id+'&id='+this.modelId
 				}else{
 					alert("提交失败")
 				}
