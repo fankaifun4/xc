@@ -4,7 +4,7 @@
         	<span class="header-title">
         		相册制作
         	</span>
-        	<span class="fr">
+        	<span class="fr" @click="goMylist">
         		我的相册<span class="iconfont icon-you"></span>
         	</span>
         </header>
@@ -274,6 +274,9 @@
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+			goMylist(){
+				window.location=window.location.origin+"/mobile/User/photo_list.html"
+			},
 			prev(){
 				if(this.swiper.isBeginning) return
 				this.current=null
@@ -400,6 +403,17 @@
 			getChoiseImg(url){
 				this.current.pic=url
 			},
+			getDomWidthOrHeight(widthOrHeight,obj){
+				var clone=obj.cloneNode(true);
+				clone.style.display="block";
+				clone.style.position="absolute";
+			　　clone.style.top='-10000px';
+				obj.parentNode.appendChild(clone);
+				var width=clone.offsetWidth;
+				var height=clone.offsetHeight;
+				obj.parentNode.removeChild(clone);
+				return widthOrHeight=="width"?width:height;    
+			},
 			//获取当前图像载体
 			getItems(e){
 				let cx=e.pageX-this.cvs.parentNode.offsetLeft
@@ -412,8 +426,17 @@
 						this.iscutUrl=reloadimg
 						this.computPX(this.current)
 						this.isChange=!this.isChange
+						let width=this.getDomWidthOrHeight('width',cutRectDom)
+						let pleft=this.cvs.offsetLeft+width+p.l;
+						let cwidth=this.$refs.container.clientWidth;
+						
+						if( pleft>cwidth ){
+							pleft=cwidth-width-10
+						}else{
+							pleft=p.l+this.cvs.offsetLeft
+						}
 						this.cutRect={
-							left:p.l+this.cvs.offsetLeft+'px',
+							left:pleft+'px',
 							top:p.t+30+'px'
 						}
 					}

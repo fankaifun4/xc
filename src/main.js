@@ -5,10 +5,10 @@ import App from './App'
 import router from './router'
 import axios from 'axios'
 import store from './store/store.js'
-// import VConsole from 'vconsole'
+import VConsole from 'vconsole'
 import '@/libs/flexlib.js'
 import "@/style/comm.scss"
-// window.vConsole = new VConsole();
+window.vConsole = new VConsole();
 Vue.prototype.$http = axios
 Vue.config.productionTip = true
     /* eslint-disable no-new */
