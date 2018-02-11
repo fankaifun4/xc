@@ -154,12 +154,18 @@
 				<div class="chang-img-wrap">
 					<div class="wrap-body">
 						<div class="close-change" @click="closeChangeImg">关闭</div>
-						<div class="upload">上传图片
-							<input class="getFiles" type="file" name="" 
-							@change="getFiles" ref="uploadFiles">
+						<div class="upload" style="margin-top:40px">
+							<input type="button" value="选择图片" class="getFiles" @click="getFiles" ref="uploadFiles">
 						</div>
-						<!-- <div class="success" @click="drawItems">确定</div> -->
+						<div class="upload">
+							<input type="button" value="确认上传" class="getFiles" @click="uploadImg" ref="uploadImg">
+						</div>
 						<div class="change" @click="changePics">修改图片</div>
+						<div class="img-prev">
+							<div class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
+								<img :src="items" alt="">
+							</div>
+						</div>
 					</div>
 					
 				</div>
@@ -191,7 +197,7 @@
 	import drawcvs from '@/mixins/draw-cvs'
 	import Swiper from 'swiper'
 	import {mapState,mapActions} from 'vuex'
-	import {upload,getAlbum,uploadAlbums} from '../service/album'
+	import {upload,getAlbum,uploadAlbums,getSDK} from '../service/album'
 	const reloadimg=require('../../static/bg.png')
     export default{
         data(){
@@ -257,7 +263,13 @@
 				isActive:0,
 				user_id:null,
 				modelId:null,
-				goods_id:null
+				goods_id:null,
+				//微信接口
+				wxSDK:null,
+				//选择的图片列表
+				localIds:null,
+				//上传图片返回服务ID
+				serverId:null
             }
 		},
         components:{
@@ -267,15 +279,24 @@
 			colorPicker
         },
         mounted(){
-			this.getData()
+			this.initSDK()
+			
         },
         computed:{
 			...mapState(['imgId','imgUrl','imglist']),
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+			async initSDK(){
+				let res=await getSDK({ askUrl:location.href.split('#')[0] })
+				this.initSdk(res,(wx)=>{
+					this.wxSDK=wx
+					this.getData()
+                })				
+			},
 			goMylist(){
-				window.location=window.location.origin+"/mobile/User/photo_list.html"
+				this.$router.push({name:'test'})
+				// window.location=window.location.origin+"/mobile/User/photo_list.html"
 			},
 			prev(){
 				if(this.swiper.isBeginning) return
@@ -343,7 +364,7 @@
         		this.isloading=true
         		this.loadingCont="正在初始化请稍后..."
         		if(!this.$route.query.id){
-        			alert('您还没有登录，请登陆后重试')
+        			// alert('您还没有登录，请登陆后重试')
         			this.error=true
         			this.isloading=false
         			return
@@ -498,30 +519,107 @@
 				this.isChangeImg=true
 			},
 			//获取上传图片blob
-			getFiles(){
-				let cur=this.current
-				let uploadFiles=this.$refs.uploadFiles
-				let imgName=uploadFiles.files[0].name;
-				if( !imgName.match(/(.png|.jpeg|.jpg)$/ig) ){
-					alert('您选择的不是图片')
+			getFiles(e){
+				const _this=this
+				let imgItems=0;
+				e.preventDefault();
+				e.stopPropagation();
+				this.tempData.forEach((item)=>{
+					item.list.forEach(item=>{
+						if(imgItems<9){
+							imgItems++
+						}else{
+							imgItems=9
+						}
+					})
+				})
+				
+				this.wxSDK.chooseImage({
+                    count: imgItems, // 默认9
+                    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
+                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
+                    success: function (res) {
+                        _this.localIds = res.localIds; // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+					},
+					fail:function(er){
+						alert(er)
+					}
+                })
+				// return;
+				// let cur=this.current
+				// let uploadFiles=this.$refs.uploadFiles
+				// let imgName=uploadFiles.files[0].name;
+				// if( !imgName.match(/(.png|.jpeg|.jpg)$/ig) ){
+				// 	alert('您选择的不是图片')
+				// 	return;
+				// }
+				// if( !uploadFiles.files[0] ) return
+				// if(uploadFiles.files[0].size>1024*1024*4) {
+				// 	alert('图片必须小于4M')
+				// 	return
+				// }
+				// let blobImg=this.getFileUrl(uploadFiles)
+				// this.loadingCont=""
+				// this.iscutUrl=blobImg
+				// this.isCut=true
+				// if(!this.iscutUrl) {
+				// 	alert('没有裁剪的图片，请先添加图片')
+				// 	this.isChange=false
+				// 	return
+				// }
+				// this.ratio=cur.aspectRatio
+			},
+			//上传到服务器
+			async uploadImg(){
+				const _this=this;
+				let index=0;
+				if( !_this.localIds ) {
+					alert('没有选择图片')
 					return;
 				}
-				if( !uploadFiles.files[0] ) return
-				if(uploadFiles.files[0].size>1024*1024*4) {
-					alert('图片必须小于4M')
-					return
+				_this.serverId=[];
+				_upload(index)
+				function  _upload(_index){
+					let localId=_this.localIds[_index].toString()
+					_this.isloading=true
+					_this.wxSDK.uploadImage({
+						localId: localId, // 需要上传的图片的本地ID，由chooseImage接口获得
+						isShowProgressTips: 1,// 默认为1，显示进度提示
+						success: async function (res) {
+							_this.serverId.push(res.serverId) // 返回图片的服务器端ID
+							if( _index<_this.localIds.length-1 ){
+								_index++;
+								_upload(_index)
+								console.log(_index)
+							}else{
+								console.log(_index)
+								_this.isloading=false
+							}
+						},
+						fail:function(er){
+							alert(er)
+							console.log(er)
+						}
+					})
 				}
-				let blobImg=this.getFileUrl(uploadFiles)
-				this.loadingCont=""
-				this.iscutUrl=blobImg
-				this.isCut=true
-				if(!this.iscutUrl) {
-					alert('没有裁剪的图片，请先添加图片')
-					this.isChange=false
-					return
-				}
-				this.ratio=cur.aspectRatio
+				
 			},
+			
+			//获取input files 对象的bolob路径
+    		getFileUrl(soure) {
+		        var url;
+		        if (navigator.userAgent.indexOf("MSIE") >= 1) { // IE 
+		            url = soure.value;
+		        } else if (navigator.userAgent.indexOf("Firefox") > 0) { // Firefox 
+		            url = window.URL.createObjectURL(soure.files[0]);
+		        } else if (navigator.userAgent.indexOf("Chrome") > 0) { // Chrome 
+		            url = window.URL.createObjectURL(soure.files[0]);
+		        }else{
+		        	url = window.URL.createObjectURL(soure.files[0]);
+		        }
+		        return url;
+			},
+			
 			//修改图片
 			changePics(){
 				this.isChangeImg=false
@@ -665,20 +763,7 @@
 					return
 				}
 			},
-			//获取input files 对象的bolob路径
-    		 getFileUrl(soure) {
-		        var url;
-		        if (navigator.userAgent.indexOf("MSIE") >= 1) { // IE 
-		            url = soure.value;
-		        } else if (navigator.userAgent.indexOf("Firefox") > 0) { // Firefox 
-		            url = window.URL.createObjectURL(soure.files[0]);
-		        } else if (navigator.userAgent.indexOf("Chrome") > 0) { // Chrome 
-		            url = window.URL.createObjectURL(soure.files[0]);
-		        }else{
-		        	url = window.URL.createObjectURL(soure.files[0]);
-		        }
-		        return url;
-		    },
+
 			//添加文字
 			addTextBtn(){
 				let addText=this.$refs.addText
@@ -1160,7 +1245,7 @@
 				color:#000;
 				text-align: center;
 				>div{
-					padding:20px 25px;
+					height:60px;
 					border:1px solid #cecece;
 					color:#fff;
 					font-size:34px;
@@ -1179,12 +1264,9 @@
 					width:100%;
 					height:100%;
 					display:block;
-					position:absolute;
-					left:0;
-					top:0;
-					right:0;
-					bottom:0;
-					opacity:0;
+					background:#093;
+					color:#fff;
+					border:none;
 				}
 				.success{
 					margin-top:50px;
@@ -1198,21 +1280,38 @@
 				}
 				.upload{
 					position:relative;
-					margin-top:100px;
+					margin-top:20px;
 					background:#093;
 				}
 				.change{
-					margin:30px 0;
+					margin:20px 0;
+					height:60px;
+					line-height: 60px;
+					font-size: 24px;
 					background:#990000;
 				}
 				.close-change{
 					width:70px;
-					background:rgba(255,255,255,.5);
+					height:40px;
+					line-height:40px;
 					position:absolute;
 					right:10px;
 					top:10px;
 				}
-				
+				.img-prev{
+					display:flex;
+					flex-wrap:wrap;
+					border:none;
+					.img-prev-wrap{
+						width:130px;
+						margin:10px 20px;
+						>img{
+							display: block;
+							border:none;
+							width:100%;
+						}
+					}
+				}
 			}
 		}
 	}

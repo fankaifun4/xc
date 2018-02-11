@@ -14,3 +14,6 @@ export const getMyAlbList = params => config.get('/getusalbum', params)
 
 //上传blob
 export const uploadBolb = params => config.upload('/upbob', params)
+
+//获取wx-js-sdk 权限
+export const getSDK = params => config.post('http://tp.taodama.net/index.php?m=Mobile&c=Index&a=ajaxGetWxConfig&t=' + Math.random(), params)
