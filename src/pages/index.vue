@@ -154,16 +154,17 @@
 				<div class="chang-img-wrap">
 					<div class="wrap-body">
 						<div class="close-change" @click="closeChangeImg">关闭</div>
-						<div class="upload" style="margin-top:40px">
-							<input type="button" value="选择图片" class="getFiles" @click="getFiles" ref="uploadFiles">
-						</div>
-						<div class="upload">
-							<input type="button" value="确认上传" class="getFiles" @click="uploadImg" ref="uploadImg">
-						</div>
-						<div class="change" @click="changePics">修改图片</div>
+
+						<input type="button" value="选择图片" class="getFiles" 
+						@click="getFiles" ref="uploadFiles">
+
+						<input type="button" value="确认已选" class="setFiles" 
+						@click="uploadImg" ref="uploadImg">
+
+						<input type="button" value="修改图片" class="change" @click="changePics">
 						<div class="img-prev">
 							<div class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
-								<img :src="items" alt="">
+								<img :src="items" alt="" refs="choiceItems">
 							</div>
 						</div>
 					</div>
@@ -268,8 +269,8 @@
 				wxSDK:null,
 				//选择的图片列表
 				localIds:null,
-				//上传图片返回服务ID
-				serverId:null
+				//选择本地图片转成的base64
+				localData:[]
             }
 		},
         components:{
@@ -295,8 +296,8 @@
                 })				
 			},
 			goMylist(){
-				this.$router.push({name:'test'})
-				// window.location=window.location.origin+"/mobile/User/photo_list.html"
+				// this.$router.push({name:'test'})
+				window.location=window.location.origin+"/mobile/User/photo_list.html"
 			},
 			prev(){
 				if(this.swiper.isBeginning) return
@@ -422,7 +423,14 @@
 			},
 			//获取修改传过来的url
 			getChoiseImg(url){
-				this.current.pic=url
+				const _this=this
+				this.wxSDK.getLocalImgData({
+					localId:url,
+					success:function(res){
+						_this.$set(_this.current,'pic','data:image/jpg;base64,'+res.localData)
+					}
+				})
+				
 			},
 			getDomWidthOrHeight(widthOrHeight,obj){
 				var clone=obj.cloneNode(true);
@@ -450,7 +458,6 @@
 						let width=this.getDomWidthOrHeight('width',cutRectDom)
 						let pleft=this.cvs.offsetLeft+width+p.l;
 						let cwidth=this.$refs.container.clientWidth;
-						
 						if( pleft>cwidth ){
 							pleft=cwidth-width-10
 						}else{
@@ -521,30 +528,26 @@
 			//获取上传图片blob
 			getFiles(e){
 				const _this=this
-				let imgItems=0;
-				e.preventDefault();
-				e.stopPropagation();
-				this.tempData.forEach((item)=>{
-					item.list.forEach(item=>{
-						if(imgItems<9){
-							imgItems++
-						}else{
-							imgItems=9
-						}
-					})
+				this.localIds=null
+				let imgItems=0
+				e.preventDefault()
+				e.stopPropagation()
+				this.current.list.forEach((item)=>{
+					imgItems++
 				})
-				
 				this.wxSDK.chooseImage({
                     count: imgItems, // 默认9
                     sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
                     sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
                     success: function (res) {
-                        _this.localIds = res.localIds; // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+                        _this.localIds = res.localIds;
 					},
 					fail:function(er){
 						alert(er)
 					}
                 })
+
 				// return;
 				// let cur=this.current
 				// let uploadFiles=this.$refs.uploadFiles
@@ -569,40 +572,37 @@
 				// }
 				// this.ratio=cur.aspectRatio
 			},
-			//上传到服务器
-			async uploadImg(){
+
+			//获取微信选择的本地图片
+			uploadImg(){
 				const _this=this;
 				let index=0;
+
 				if( !_this.localIds ) {
 					alert('没有选择图片')
 					return;
 				}
-				_this.serverId=[];
-				_upload(index)
-				function  _upload(_index){
-					let localId=_this.localIds[_index].toString()
-					_this.isloading=true
-					_this.wxSDK.uploadImage({
-						localId: localId, // 需要上传的图片的本地ID，由chooseImage接口获得
-						isShowProgressTips: 1,// 默认为1，显示进度提示
-						success: async function (res) {
-							_this.serverId.push(res.serverId) // 返回图片的服务器端ID
-							if( _index<_this.localIds.length-1 ){
-								_index++;
-								_upload(_index)
-								console.log(_index)
-							}else{
-								console.log(_index)
-								_this.isloading=false
-							}
+				this.localIds.forEach(item=>{
+					this.$store.dispatch('setImg',item)
+				})
+				__getImaData(index)
+				let list=_this.current.list
+				function __getImaData(_index){
+					if(_index>=_this.localIds.length) {
+						_this.isloading=false
+						return
+					}
+					_this.wxSDK.getLocalImgData({
+						localId:_this.localIds[index],
+						success:function(res){
+							_index++
+							__getImaData(_index)
 						},
 						fail:function(er){
 							alert(er)
-							console.log(er)
 						}
 					})
 				}
-				
 			},
 			
 			//获取input files 对象的bolob路径
@@ -924,11 +924,13 @@
 				}
 			},
 			overHidden(value){
-				let body=document.body
+				let app=document.getElementById('app')
         		if(value){
-        			body.style.overflow='hidden'
+        			app.style.height="100%"
+        			app.style.overflow='hidden'
         		}else{
-        			body.style.overflow='scroll'
+        			app.style.height=""
+        			app.style.overflow='scroll'
         		}
 			}
         },
@@ -1262,11 +1264,27 @@
 				}
 				.getFiles{
 					width:100%;
-					height:100%;
+					height:80px;
 					display:block;
 					background:#093;
 					color:#fff;
 					border:none;
+					font-size:28px;
+					margin-top:80px;
+					background:#090;
+					border:1px solid #fff;
+				}
+				.setFiles{
+					width:100%;
+					height:80px;
+					display:block;
+					background:#093;
+					color:#fff;
+					border:none;
+					font-size:28px;
+					margin-top:30px;
+					background:#090;
+					border:1px solid #fff;
 				}
 				.success{
 					margin-top:50px;
@@ -1278,17 +1296,15 @@
 					background:#fff;
 					color:#333;
 				}
-				.upload{
-					position:relative;
-					margin-top:20px;
-					background:#093;
-				}
 				.change{
+					width:100%;
+					height:80px;
 					margin:20px 0;
-					height:60px;
-					line-height: 60px;
+					display:block;
 					font-size: 24px;
-					background:#990000;
+					background:#900;
+					color:#fff;
+					border:1px solid #fff;
 				}
 				.close-change{
 					width:70px;
@@ -1297,6 +1313,10 @@
 					position:absolute;
 					right:10px;
 					top:10px;
+					background:#fff;
+					color:#000;
+					padding:10px 15px;
+					border:none;
 				}
 				.img-prev{
 					display:flex;

@@ -32,7 +32,8 @@ Vue.prototype.initSdk = (target, callback) => {
             'onMenuShareAppMessage',
             "chooseImage",
             "previewImage",
-            "uploadImage"
+            "uploadImage",
+            "getLocalImgData"
         ]
     })
 
@@ -45,7 +46,8 @@ Vue.prototype.initSdk = (target, callback) => {
             'onMenuShareAppMessage',
             "chooseImage",
             "previewImage",
-            "uploadImage"
+            "uploadImage",
+            "getLocalImgData"
         ],
         success(res) {
 

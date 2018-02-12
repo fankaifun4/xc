@@ -57,7 +57,7 @@
 					aspectRatio: this.aspectr,  
 					viewMode: 1,  
 					background:true,  
-					zoomable:true,  
+					zoomable:true, 
 					checkCrossOrigin:false,
 					dragMode:'move',
 					restore:true,
@@ -83,6 +83,7 @@
 			async getSave(){
 				this.$parent.isloading=true
 				this.cropper.getCroppedCanvas().toBlob(async (boble)=>{
+					console.log(boble)
 					var formData = new FormData()
 					formData.append('file',boble,'jpg')
 					let uploadData = await upload(formData)
