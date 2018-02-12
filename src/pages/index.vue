@@ -271,7 +271,9 @@
 				//选择本地图片转成的base64
 				localData:[],
 				//保存当前图片index
-				tempImgIndex:0
+				tempImgIndex:0,
+				//第N次批量上传
+				uploadIndex:0
             }
 		},
         components:{
@@ -525,6 +527,7 @@
             	this.iscutUrl=reloadimg
 				this.isChange=false
 				this.isChangeImg=true
+				this.localIds=null
 			},
 			//获取上传图片blob
 			getFiles(e){
@@ -583,15 +586,15 @@
 				const _this=this;
 				let index=0;
 				//tempImgIndex
-				if( !_this.localIds ) {
+				if( !this.localIds ) {
 					alert('没有选择图片')
 					return;
 				}
-				this.localIds.forEach(item=>{
+				this.uploadIndex+=1;
+				this.localIds.forEach((item,index)=>{
 					this.$store.dispatch('setImg',item)
 				})
 				__getImaData(index)
-				let list=_this.current.list
 				function __getImaData(_index){
 					if(_index>=_this.localIds.length) {
 						_this.isloading=false
@@ -602,7 +605,7 @@
 						localId:_this.localIds[_index],
 						success:function(res){
 							_index++
-							_this.tempImgIndex=_index
+							_this.tempImgIndex+=1
 							let data=res.localData
 							_this.localData.push(data);
 							__getImaData(_index)
@@ -616,11 +619,16 @@
 			//这是图片路径
 			setImgIndexUrl(){
 				let index=0;
+				if(this.uploadIndex>1){
+					index=this.tempImgIndex
+				}
 				this.tempData.forEach(item=>{
 					item.list.forEach(list=>{
-						console.log(index)
-						list.pic='data:image/jpg;base64,'+this.localData[index]
-						index++;
+						if( this.localData[index] ){
+							console.log(index)
+							list.pic='data:image/jpg;base64,'+this.localData[index]
+							index++;
+						}
 					})
 				})
 			},
