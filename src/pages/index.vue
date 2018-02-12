@@ -164,11 +164,10 @@
 						<input type="button" value="修改图片" class="change" @click="changePics">
 						<div class="img-prev">
 							<div class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
-								<img :src="items" alt="" refs="choiceItems">
+								<img :src="items" alt="">
 							</div>
 						</div>
 					</div>
-					
 				</div>
 			</div>
 			<!-- loading -->
@@ -270,7 +269,9 @@
 				//选择的图片列表
 				localIds:null,
 				//选择本地图片转成的base64
-				localData:[]
+				localData:[],
+				//保存当前图片index
+				tempImgIndex:0
             }
 		},
         components:{
@@ -532,8 +533,12 @@
 				let imgItems=0
 				e.preventDefault()
 				e.stopPropagation()
-				this.current.list.forEach((item)=>{
-					imgItems++
+				this.tempData.forEach(item=>{
+					item.list.forEach(img=>{
+						if( imgItems<9 ){
+							imgItems++
+						}
+					})
 				})
 				this.wxSDK.chooseImage({
                     count: imgItems, // 默认9
@@ -577,7 +582,7 @@
 			uploadImg(){
 				const _this=this;
 				let index=0;
-
+				//tempImgIndex
 				if( !_this.localIds ) {
 					alert('没有选择图片')
 					return;
@@ -590,12 +595,16 @@
 				function __getImaData(_index){
 					if(_index>=_this.localIds.length) {
 						_this.isloading=false
+						_this.setImgIndexUrl()
 						return
 					}
 					_this.wxSDK.getLocalImgData({
-						localId:_this.localIds[index],
+						localId:_this.localIds[_index],
 						success:function(res){
 							_index++
+							_this.tempImgIndex=_index
+							let data=res.localData
+							_this.localData.push(data);
 							__getImaData(_index)
 						},
 						fail:function(er){
@@ -604,7 +613,17 @@
 					})
 				}
 			},
-			
+			//这是图片路径
+			setImgIndexUrl(){
+				let index=0;
+				this.tempData.forEach(item=>{
+					item.list.forEach(list=>{
+						console.log(index)
+						list.pic='data:image/jpg;base64,'+this.localData[index]
+						index++;
+					})
+				})
+			},
 			//获取input files 对象的bolob路径
     		getFileUrl(soure) {
 		        var url;
@@ -1321,9 +1340,10 @@
 				.img-prev{
 					display:flex;
 					flex-wrap:wrap;
+					flex-direction:center;
 					border:none;
 					.img-prev-wrap{
-						width:130px;
+						width:20%;
 						margin:10px 20px;
 						>img{
 							display: block;
