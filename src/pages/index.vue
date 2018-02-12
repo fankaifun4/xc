@@ -599,6 +599,7 @@
 					if(_index>=_this.localIds.length) {
 						_this.isloading=false
 						_this.setImgIndexUrl()
+						console.log('-----------')
 						return
 					}
 					_this.wxSDK.getLocalImgData({
@@ -622,14 +623,18 @@
 				if(this.uploadIndex>1){
 					index=this.tempImgIndex
 				}
+				let imgList=[]
 				this.tempData.forEach(item=>{
 					item.list.forEach(list=>{
-						if( this.localData[index] ){
-							console.log(index)
-							list.pic='data:image/jpg;base64,'+this.localData[index]
-							index++;
-						}
+						imgList.push(list)
 					})
+				})
+				imgList.forEach((item,_index)=>{
+					if( _index<index ) return
+					if( !this.localData[index] ) return
+					item.pic='data:image/jpg;base64,'+this.localData[index]
+					index++
+					
 				})
 			},
 			//获取input files 对象的bolob路径

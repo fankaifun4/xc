@@ -6,6 +6,7 @@
 		<div class="addText">
 			<div class="item-text" 
 				v-for="(item,key) in fontStyle" 
+				:key="key"
 				:style="{
 					top:item.top,
 					left:item.left,
