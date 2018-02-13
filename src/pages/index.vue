@@ -157,18 +157,16 @@
 
 						<input type="button" value="选择图片" class="getFiles" 
 						@click="getFiles" ref="uploadFiles">
-
-						<input type="button" value="确认已选" class="setFiles" 
-						@click="uploadImg" ref="uploadImg">
-
-						<input type="button" value="修改图片" class="change" @click="changePics">
+						<!-- <input type="button" value="确认已选" class="setFiles" 
+						@click="uploadImg" ref="uploadImg"> -->
+						<!-- <input type="button" value="修改图片" class="change" @click="changePics"> -->
 						<div class="img-prev">
 							<div v-if="!isIOS()" class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
 								<img :src="items" alt="">
 							</div>
-							<div v-if="isIOS()" class="img-prev-wrap" v-for="(items,key) in iosImgPrev" :key="key">
+							<!-- <div v-if="isIOS()" class="img-prev-wrap" v-for="(items,key) in iosImgPrev" :key="key">
 								<img :src="items" alt="">
-							</div>
+							</div> -->
 						</div>
 					</div>
 				</div>
@@ -188,14 +186,14 @@
 				@showLoading='showLoading'
 				:cutUrl="iscutUrl"></cut>
 			<!-- 修改图片组件 -->
-			<chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose>
+			<!-- <chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose> -->
 		</div>
     </section>
 </template>
 <script>
     import cut from '@/components/cut'
 	import loading from '@/components/loading'
-	import chiose from '@/components/chiose'
+	// import chiose from '@/components/chiose'
 	import colorPicker from '@/components/color-picker'
 	import drawcvs from '@/mixins/draw-cvs'
 	import Swiper from 'swiper'
@@ -291,7 +289,7 @@
         components:{
 			cut,
 			loading,
-			chiose,
+			// chiose,
 			colorPicker
         },
         mounted(){
@@ -445,22 +443,22 @@
 				this.loadingCont=""
 			},
 			//获取修改传过来的url
-			getChoiseImg(url){
-				const _this=this
-				this.wxSDK.getLocalImgData({
-					localId:url,
-					success:function(res){
-						if(isIOS()){
-							data=res.localData.replace('data:image/jgp','data:image/jgeg')
-							_this.$set(_this.current,'pic',data)
-						}else{
-							_this.$set(_this.current,'pic','data:image/jpeg;base64,'+res.localData)
-						}
+			// getChoiseImg(url){
+			// 	const _this=this
+			// 	this.wxSDK.getLocalImgData({
+			// 		localId:url,
+			// 		success:function(res){
+			// 			if(isIOS()){
+			// 				data=res.localData.replace(/data:image\/jgp/,'data:image/jgeg')
+			// 				_this.$set(_this.current,'pic',data)
+			// 			}else{
+			// 				_this.$set(_this.current,'pic','data:image/jpeg;base64,'+res.localData)
+			// 			}
 						
-					}
-				})
+			// 		}
+			// 	})
 				
-			},
+			// },
 			getDomWidthOrHeight(widthOrHeight,obj){
 				var clone=obj.cloneNode(true);
 				clone.style.display="block";
@@ -521,7 +519,7 @@
 				}
 				this.current.pic=this.baseUrl+url
 				this.itemsFile=this.baseUrl+url
-				this.$store.dispatch('setImg',url)
+				// this.$store.dispatch('setImg',url)
 				this.isCut=false
 				this.isChangeImg=false
 				this.isloading=false
@@ -558,13 +556,13 @@
 				this.isChange=false
 				this.isChangeImg=true
 				this.localIds=null
-				this.iosImgPrev=null
+				this.iosImgPrev=[]
 			},
 			//获取上传图片blob
 			getFiles(e){
 				const _this=this
 				this.localIds=null
-				this.iosImgPrev=null
+				this.iosImgPrev=[]
 				let imgItems=0
 				e.preventDefault()
 				e.stopPropagation()
@@ -575,10 +573,8 @@
 	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
-	                        _this.localIds = res.localIds;
-	                        if( isIOS() ){
-	                        	_this.IOSprev(res.localIds)
-	                        }
+							_this.localIds = res.localIds;
+							_this.uploadImg()
 						},
 						fail:function(er){
 							alert(er)
@@ -593,10 +589,8 @@
 	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
-	                        _this.localIds = res.localIds;
-	                        if( isIOS() ){
-	                        	_this.IOSprev(res.localIds)
-	                        }
+							_this.localIds = res.localIds;
+							_this.uploadImg()
 						},
 						fail:function(er){
 							alert(er)
@@ -617,65 +611,21 @@
 	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
-	                        _this.localIds = res.localIds;
-	                        if( isIOS() ){
-	                        	_this.IOSprev(res.localIds)
-	                        }
+							_this.localIds = res.localIds;
+							_this.uploadImg()
 						},
 						fail:function(er){
 							alert(er)
 						}
 	                })
 				}
-				// return;
-				// let cur=this.current
-				// let uploadFiles=this.$refs.uploadFiles
-				// let imgName=uploadFiles.files[0].name;
-				// if( !imgName.match(/(.png|.jpeg|.jpg)$/ig) ){
-				// 	alert('您选择的不是图片')
-				// 	return;
-				// }
-				// if( !uploadFiles.files[0] ) return
-				// if(uploadFiles.files[0].size>1024*1024*4) {
-				// 	alert('图片必须小于4M')
-				// 	return
-				// }
-				// let blobImg=this.getFileUrl(uploadFiles)
-				// this.loadingCont=""
-				// this.iscutUrl=blobImg
-				// this.isCut=true
-				// if(!this.iscutUrl) {
-				// 	alert('没有裁剪的图片，请先添加图片')
-				// 	this.isChange=false
-				// 	return
-				// }
-				// this.ratio=cur.aspectRatio
-			},
-			//IOS 预览
-			IOSprev(ids){
-				const _this=this
-				ids.forEach(item=>{
-					this.wxSDK.getLocalImgData({
-						localId:item,
-						success:function(res){
-							// let data=res.localData.replace('data:image/jgp','data:image/jgeg')
-							_this.iosImgPrev.push(data)
-						},
-						fail:function(er){
-							alert(er)
-						}
-					})
-				})
+				let cur=this.current
+				this.ratio=cur.aspectRatio
 			},
 			//获取微信选择的本地图片
 			uploadImg(){
 				const _this=this;
-				if( !this.localIds ) {
-					alert('没有选择图片')
-					return
-				}
 				this.isloading=true
-
 				//如果是删除了图片则只进行替换
 				if( this.current.isDelete  ){
 					_this.wxSDK.getLocalImgData({
@@ -724,11 +674,6 @@
 					//tempImgIndex
 					// 当前第几次上传
 					this.uploadIndex+=1;
-					this.localIds.forEach((item,index)=>{
-
-						//将图片路径放入本地缓存中
-						this.$store.dispatch('setImg',item)
-					})
 					__getImaData(index)
 					function __getImaData(_index){
 
@@ -753,7 +698,6 @@
 								_this.localData.push(data);
 								//开始递归获取图片地址
 								__getImaData(_index)
-
 							},
 							fail:function(er){
 								alert(er)
@@ -761,7 +705,6 @@
 						})
 					}
 				}
-
 				//关闭选择图片组件
 				this.closeChangeImg()	
 			},
@@ -779,6 +722,7 @@
 					}
 					if( _index>this.localData.length-1 ) return
 					if( isIOS() ){
+						console.log('--------this is the ios imgList------------')
 						let data=this.localData[_index].replace(/data:image\/jgp/,'data:image/jgeg')
 						this.$set(this.iconlist[_index],'pic',data)
 					}else{
@@ -807,11 +751,11 @@
 			//修改图片
 			changePics(){
 				this.isChangeImg=false
-				this.choiseShow=true
+				// this.choiseShow=true
 			},
 			//打开修改图片组件
 			getChoiseImghidden(){
-				this.choiseShow=false
+				// this.choiseShow=false
 			},
 			//打开裁剪图片组件
             cutPic(){
@@ -1128,9 +1072,9 @@
         	isCut(prev,old){
         		this.overHidden(prev)
         	},
-        	choiseShow(prev,old){
-        		this.overHidden(prev)
-        	},
+        	// choiseShow(prev,old){
+        	// 	this.overHidden(prev)
+        	// },
         	previewCVS(prev,old){
         		this.overHidden(prev)
         	}
