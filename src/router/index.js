@@ -8,7 +8,7 @@ export default new Router({
         path: '/',
         name: 'index',
         component: index
-    }, {
+    },{
         path: "/listmain",
         name: "listmain",
         component: r => require.ensure([], () => r(require('../pages/listmain.vue')), 'album'),
@@ -17,9 +17,5 @@ export default new Router({
             name: "album",
             component: r => require.ensure([], () => r(require('../pages/albumlist.vue')), 'album'),
         }]
-    }, {
-        path: "/test",
-        name: "test",
-        component: r => require.ensure([], () => r(require('../pages/choiseImg.vue')), 'album'),
     }]
 })
