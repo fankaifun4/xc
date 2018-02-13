@@ -578,6 +578,7 @@
 	                })
 				}else{
 					this.iconlist.forEach((item,index)=>{
+						if(  item.pic ) return
 						if(imgItems<9){
 							imgItems++
 						}else{
