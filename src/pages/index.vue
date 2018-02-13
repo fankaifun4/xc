@@ -146,7 +146,7 @@
 		<!-- Modals -->	
 	        <div class="slicePic" v-show="isChange" :style="cutRect" ref="cutRectDom">
 	            <div class="cut" @click="cutPic">裁剪</div>
-	            <div class="upload" @click="uploadPic">修改图片</div>
+	            <div class="upload" @click="uploadPic">{{hasImg?"替换图片":"添加图片"}}</div>
 	            <div class="delete" @click="deletePic">删除</div>
 	        </div>
 			<!-- 修改，上传 dom  -->
@@ -273,7 +273,10 @@
 				//保存当前图片index
 				tempImgIndex:0,
 				//第N次批量上传
-				uploadIndex:0
+				uploadIndex:0,
+				//相册items缓存
+				iconlist:[],
+				hasImg:false
             }
 		},
         components:{
@@ -397,6 +400,11 @@
         		this.loadingCont="背景图片加载完成"
         		this.tempData=data
 				this.loadingCont="正在渲染相册结构..."
+				this.tempData.forEach(item=>{
+					item.list.forEach(list=>{
+						this.iconlist.push(list)
+					})
+				})
 				setTimeout(()=>{
 					 this.swiper	=new Swiper('.swiper-container', {
 					 	loop : false,
@@ -456,6 +464,9 @@
 					if( cx>=p.l && cy>=p.t && cx<=p.l+p.w && cy<=p.t+p.h ){
 						this.current=item
 						this.iscutUrl=reloadimg
+
+						//判断当前item 是否已存在图片
+						this.hasImg=(item.pic&&item.pic!="")?true:false
 						this.computPX(this.current)
 						this.isChange=!this.isChange
 						let width=this.getDomWidthOrHeight('width',cutRectDom)
@@ -473,6 +484,7 @@
 					}
 				})
 				this.picItemCtrl=true;
+				
 			},
 			//loading start
 			isload(){
@@ -536,26 +548,55 @@
 				let imgItems=0
 				e.preventDefault()
 				e.stopPropagation()
-				this.tempData.forEach(item=>{
-					item.list.forEach(img=>{
-						if( imgItems<9 ){
+				if(this.current.isDelete){
+					this.wxSDK.chooseImage({
+	                    count: 1,
+	                    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
+	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
+	                    success: function (res) {
+	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+	                        _this.localIds = res.localIds;
+						},
+						fail:function(er){
+							alert(er)
+						}
+	                })
+	                return;
+				}
+				if(this.hasImg){
+					this.wxSDK.chooseImage({
+	                    count: 1,
+	                    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
+	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
+	                    success: function (res) {
+	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+	                        _this.localIds = res.localIds;
+						},
+						fail:function(er){
+							alert(er)
+						}
+	                })
+				}else{
+					this.iconlist.forEach((item,index)=>{
+						if(imgItems<9){
 							imgItems++
+						}else{
+							imgItems=9
 						}
 					})
-				})
-				this.wxSDK.chooseImage({
-                    count: imgItems, // 默认9
-                    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
-                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
-                    success: function (res) {
-                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
-                        _this.localIds = res.localIds;
-					},
-					fail:function(er){
-						alert(er)
-					}
-                })
-
+					this.wxSDK.chooseImage({
+	                    count: imgItems,
+	                    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
+	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
+	                    success: function (res) {
+	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
+	                        _this.localIds = res.localIds;
+						},
+						fail:function(er){
+							alert(er)
+						}
+	                })
+				}
 				// return;
 				// let cur=this.current
 				// let uploadFiles=this.$refs.uploadFiles
@@ -584,57 +625,107 @@
 			//获取微信选择的本地图片
 			uploadImg(){
 				const _this=this;
-				let index=0;
-				//tempImgIndex
 				if( !this.localIds ) {
 					alert('没有选择图片')
-					return;
+					return
 				}
-				this.uploadIndex+=1;
-				this.localIds.forEach((item,index)=>{
-					this.$store.dispatch('setImg',item)
-				})
-				__getImaData(index)
-				function __getImaData(_index){
-					if(_index>=_this.localIds.length) {
-						_this.isloading=false
-						_this.setImgIndexUrl()
-						console.log('-----------')
-						return
-					}
+				this.isloading=true
+
+				//如果是删除了图片则只进行替换
+				if( this.current.isDelete  ){
 					_this.wxSDK.getLocalImgData({
-						localId:_this.localIds[_index],
+						localId:_this.localIds[0],
 						success:function(res){
-							_index++
-							_this.tempImgIndex+=1
 							let data=res.localData
-							_this.localData.push(data);
-							__getImaData(_index)
+							_this.$set(_this.current,'pic','data:image/jpg;base64,'+data)
+							_this.isloading=false
 						},
 						fail:function(er){
 							alert(er)
 						}
 					})
+					this.closeChangeImg()
+					return
 				}
+
+				//如果已有图片则替换
+				if(this.hasImg){
+					_this.wxSDK.getLocalImgData({
+						localId:_this.localIds[0],
+						success:function(res){
+							let data=res.localData
+							_this.$set(_this.current,'pic','data:image/jpg;base64,'+data)
+							_this.isloading=false
+						},
+						fail:function(er){
+							alert(er)
+						}
+					})
+
+				//否则遍历添加
+				}else{
+					let index=0;
+					//tempImgIndex
+					// 当前第几次上传
+					this.uploadIndex+=1;
+					this.localIds.forEach((item,index)=>{
+
+						//将图片路径放入本地缓存中
+						this.$store.dispatch('setImg',item)
+					})
+					__getImaData(index)
+					function __getImaData(_index){
+
+						//递归结束
+						if(_index>=_this.localIds.length) {
+							_this.isloading=false
+
+							//记录当前第几张照片
+							_this.tempImgIndex-=_index
+
+							//执行设置图片路径
+							_this.setImgIndexUrl()
+							return
+						}
+
+						_this.wxSDK.getLocalImgData({
+							localId:_this.localIds[_index],
+							success:function(res){
+
+								_index++
+								_this.tempImgIndex+=1
+								let data=res.localData
+								_this.localData.push(data);
+
+								//开始递归获取图片地址
+								__getImaData(_index)
+
+							},
+							fail:function(er){
+								alert(er)
+							}
+						})
+					}
+				}
+
+				//关闭选择图片组件
+				this.closeChangeImg()	
 			},
 			//这是图片路径
 			setImgIndexUrl(){
-				let index=0;
+				let index=0
 				if(this.uploadIndex>1){
 					index=this.tempImgIndex
 				}
-				let imgList=[]
-				this.tempData.forEach(item=>{
-					item.list.forEach(list=>{
-						imgList.push(list)
-					})
-				})
-				imgList.forEach((item,_index)=>{
-					if( _index<index ) return
-					if( !this.localData[index] ) return
-					item.pic='data:image/jpg;base64,'+this.localData[index]
+				this.iconlist.forEach((item,_index)=>{
+					if( this.uploadIndex>1 && _index<index ) return
+					if(  _index==this.iconlist.leng-1 ){
+						this.isloading=false
+					}
+					if( _index>this.localData.length-1 ) return
+					this.$set(this.iconlist[_index],'pic','data:image/jpg;base64,'+this.localData[_index])
 					index++
-					
+
 				})
 			},
 			//获取input files 对象的bolob路径
@@ -686,6 +777,7 @@
 				let cur=this.current
 				if( !cur.pic ) return
 				cur.pic=""
+				cur.isDelete=true
 				this.isChange=false
 			},
 			//关闭裁剪
@@ -697,7 +789,6 @@
             //清空上传图片，预览图片路径
             deletePicUrl(){
             	this.itemsFile=null
-            	this.$refs.uploadFiles.value=''
             	this.iscutUrl=reloadimg
             },
             //计算显示位置
