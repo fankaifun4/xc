@@ -1,4 +1,8 @@
 import config from './config.js'
+
+export const isIOS = () => {
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+}
 //上传FormData
 export const upload = formData => config.upload('/upload', formData)
 

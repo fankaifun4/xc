@@ -163,7 +163,10 @@
 
 						<input type="button" value="修改图片" class="change" @click="changePics">
 						<div class="img-prev">
-							<div class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
+							<div v-if="!isIOS()" class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
+								<img :src="items" alt="">
+							</div>
+							<div v-if="isIOS()" class="img-prev-wrap" v-for="(items,key) in iosImgPrev" :key="key">
 								<img :src="items" alt="">
 							</div>
 						</div>
@@ -199,6 +202,10 @@
 	import {mapState,mapActions} from 'vuex'
 	import {upload,getAlbum,uploadAlbums,getSDK} from '../service/album'
 	const reloadimg=require('../../static/bg.png')
+
+	const isIOS = () => {
+  		return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+	}
     export default{
         data(){
             return{
@@ -276,7 +283,9 @@
 				uploadIndex:0,
 				//相册items缓存
 				iconlist:[],
-				hasImg:false
+				hasImg:false,
+				//兼容IOS预览显示
+				iosImgPrev:[]
             }
 		},
         components:{
@@ -294,6 +303,9 @@
 			...mapActions(['setImg','getImg','getAll']),
         },
         methods:{
+        	isIOS(){
+		  		return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+			},
 			async initSDK(){
 				let res=await getSDK({ askUrl:location.href.split('#')[0] })
 				this.initSdk(res,(wx)=>{
@@ -438,7 +450,13 @@
 				this.wxSDK.getLocalImgData({
 					localId:url,
 					success:function(res){
-						_this.$set(_this.current,'pic','data:image/jpg;base64,'+res.localData)
+						if(isIOS()){
+							data=res.localData.replace('data:image/jgp','data:image/jgeg')
+							_this.$set(_this.current,'pic',data)
+						}else{
+							_this.$set(_this.current,'pic','data:image/jpeg;base64,'+res.localData)
+						}
+						
 					}
 				})
 				
@@ -540,11 +558,13 @@
 				this.isChange=false
 				this.isChangeImg=true
 				this.localIds=null
+				this.iosImgPrev=null
 			},
 			//获取上传图片blob
 			getFiles(e){
 				const _this=this
 				this.localIds=null
+				this.iosImgPrev=null
 				let imgItems=0
 				e.preventDefault()
 				e.stopPropagation()
@@ -556,6 +576,9 @@
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
 	                        _this.localIds = res.localIds;
+	                        if( isIOS() ){
+	                        	_this.IOSprev(res.localIds)
+	                        }
 						},
 						fail:function(er){
 							alert(er)
@@ -571,6 +594,9 @@
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
 	                        _this.localIds = res.localIds;
+	                        if( isIOS() ){
+	                        	_this.IOSprev(res.localIds)
+	                        }
 						},
 						fail:function(er){
 							alert(er)
@@ -578,7 +604,7 @@
 	                })
 				}else{
 					this.iconlist.forEach((item,index)=>{
-						if(  item.pic ) return
+						if( item.pic ) return
 						if(imgItems<9){
 							imgItems++
 						}else{
@@ -592,6 +618,9 @@
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
 	                        _this.localIds = res.localIds;
+	                        if( isIOS() ){
+	                        	_this.IOSprev(res.localIds)
+	                        }
 						},
 						fail:function(er){
 							alert(er)
@@ -622,7 +651,22 @@
 				// }
 				// this.ratio=cur.aspectRatio
 			},
-
+			//IOS 预览
+			IOSprev(ids){
+				const _this=this
+				ids.forEach(item=>{
+					this.wxSDK.getLocalImgData({
+						localId:item,
+						success:function(res){
+							// let data=res.localData.replace('data:image/jgp','data:image/jgeg')
+							_this.iosImgPrev.push(data)
+						},
+						fail:function(er){
+							alert(er)
+						}
+					})
+				})
+			},
 			//获取微信选择的本地图片
 			uploadImg(){
 				const _this=this;
@@ -638,7 +682,13 @@
 						localId:_this.localIds[0],
 						success:function(res){
 							let data=res.localData
-							_this.$set(_this.current,'pic','data:image/jpg;base64,'+data)
+							if( isIOS() ){
+								data=res.localData.replace(/data:image\/jgp/,'data:image/jgeg')
+								_this.$set(_this.current,'pic',data)
+							}else{
+								_this.$set(_this.current,'pic','data:image/jpeg;base64,'+data)
+							}
+							
 							_this.isloading=false
 						},
 						fail:function(er){
@@ -655,7 +705,12 @@
 						localId:_this.localIds[0],
 						success:function(res){
 							let data=res.localData
-							_this.$set(_this.current,'pic','data:image/jpg;base64,'+data)
+							if( isIOS() ){
+								data=res.localData.replace(/data:image\/jgp/,'data:image/jgeg')
+								_this.$set(_this.current,'pic',data)
+							}else{
+								_this.$set(_this.current,'pic','data:image/jpeg;base64,'+data)
+							}
 							_this.isloading=false
 						},
 						fail:function(er){
@@ -692,12 +747,10 @@
 						_this.wxSDK.getLocalImgData({
 							localId:_this.localIds[_index],
 							success:function(res){
-
 								_index++
 								_this.tempImgIndex+=1
 								let data=res.localData
 								_this.localData.push(data);
-
 								//开始递归获取图片地址
 								__getImaData(_index)
 
@@ -719,12 +772,19 @@
 					index=this.tempImgIndex
 				}
 				this.iconlist.forEach((item,_index)=>{
+					if( item.pic ) return
 					if( this.uploadIndex>1 && _index<index ) return
 					if(  _index==this.iconlist.leng-1 ){
 						this.isloading=false
 					}
 					if( _index>this.localData.length-1 ) return
-					this.$set(this.iconlist[_index],'pic','data:image/jpg;base64,'+this.localData[_index])
+					if( isIOS() ){
+						let data=this.localData[_index].replace(/data:image\/jgp/,'data:image/jgeg')
+						this.$set(this.iconlist[_index],'pic',data)
+					}else{
+						this.$set(this.iconlist[_index],'pic','data:image/jpeg;base64,'+this.localData[_index])	
+					}
+					
 					index++
 
 				})
