@@ -54,6 +54,9 @@
 	            </div>
 	        </div>
 	        <div class="onlodImage fade" ref="onloadImage"></div>
+	        <div class="img-prev-list">
+	        	<imgPrev :prevlist="iconlist"/>
+	        </div>
 			<!-- canvas 预览 画图 -->
 			<div class="preview-wrap" v-show="previewCVS" >
 				<div class='preview-cont'>
@@ -160,14 +163,6 @@
 						<!-- <input type="button" value="确认已选" class="setFiles" 
 						@click="uploadImg" ref="uploadImg"> -->
 						<!-- <input type="button" value="修改图片" class="change" @click="changePics"> -->
-						<div class="img-prev">
-							<div v-if="!isIOS()" class="img-prev-wrap" v-for="(items,key)  in localIds" :key="key">
-								<img :src="items" alt="">
-							</div>
-							<!-- <div v-if="isIOS()" class="img-prev-wrap" v-for="(items,key) in iosImgPrev" :key="key">
-								<img :src="items" alt="">
-							</div> -->
-						</div>
 					</div>
 				</div>
 			</div>
@@ -199,8 +194,8 @@
 	import Swiper from 'swiper'
 	import {mapState,mapActions} from 'vuex'
 	import {upload,getAlbum,uploadAlbums,getSDK} from '../service/album'
+	import imgPrev from '@/components/img-prev'
 	const reloadimg=require('../../static/bg.png')
-
 	const isIOS = () => {
   		return /iPhone|iPad|iPod/i.test(navigator.userAgent)
 	}
@@ -290,7 +285,8 @@
 			cut,
 			loading,
 			// chiose,
-			colorPicker
+			colorPicker,
+			imgPrev
         },
         mounted(){
 			this.initSDK()
@@ -722,15 +718,12 @@
 					}
 					if( _index>this.localData.length-1 ) return
 					if( isIOS() ){
-						console.log('--------this is the ios imgList------------')
 						let data=this.localData[_index].replace(/data:image\/jgp/,'data:image/jgeg')
 						this.$set(this.iconlist[_index],'pic',data)
 					}else{
 						this.$set(this.iconlist[_index],'pic','data:image/jpeg;base64,'+this.localData[_index])	
 					}
-					
 					index++
-
 				})
 			},
 			//获取input files 对象的bolob路径
@@ -1108,6 +1101,14 @@
 	
 	.chiose-text{
 		border:2px dashed #f90 !important;
+		box-sizing: border-box;
+	}
+
+	.img-prev-list{
+		width:100%;
+		overflow: hidden;
+		height:400px;
+		padding:10px;
 		box-sizing: border-box;
 	}
 	.header{
