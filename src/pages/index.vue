@@ -55,24 +55,16 @@
 	        </div>
 	        <div class="onlodImage fade" ref="onloadImage"></div>
 	        <div class="img-prev-list">
-	        	<imgPrev :prevlist="iconlist"/>
-	        </div>
-			<!-- canvas 预览 画图 -->
-			<div class="preview-wrap" v-show="previewCVS" >
-				<div class='preview-cont'>
-					<div class="preview-bg">
-						<div class="preview-header">预览
-							<input type="button" value="X" @click="previewCVS=false" class="close" name="">
+	        	<section class="prev-list-items" ref="prevlistitems">
+					<div v-for="(item,key) in iconlist" :key="key" class="items" @click="deleteItems(item,index)">
+						<div class="item-add" v-if="!item.pic">
+							<div class="shu"></div>
+							<div class="heng"></div>
 						</div>
-						<div class="preview-body">
-							<canvas ref="tempCvas"></canvas>
-						</div>
-						<div class="saveOverPic">
-							<div class="save-in-tpl" @click="saveToTpl">确定保存</div>
-						</div>
+						<img v-if="item.pic" :src="item.pic" alt="">
 					</div>
-				</div>
-			</div>
+				</section>
+	        </div>
 			<!-- 设置插入图片微调modal -->
 	        <div class="ctrl" v-show="picItemCtrl" >
 	        	<div class="titles">
@@ -130,7 +122,7 @@
 	        </div>
 	        <div class="ctrl-alumb-wrap" >
 	        	<div class="saveImg" @click="addTextBtn">添加文字</div>
-				<div class="saveImg" @click="preview">预览高清,并去保存当前相片</div>
+				<!-- <div class="saveImg" @click="preview">预览高清,并去保存当前相片</div> -->
 				<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
 	        </div>
 			<footer class="footer">
@@ -139,6 +131,32 @@
 						<div class="swiper-wrapper">
 							<div class="swiper-slide" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
 								<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
+								<!-- <div class="addText" ref="textslide">
+									<div class="item-text" 
+										v-for="(item,key) in item.textList" 
+										:key="key" 
+										:style="{
+											top:item.style.top,
+											left:item.style.left,
+											color:item.style.color,
+											'font-size':textslide*item.style.relFontSize,
+											'font-weight':item.style.fontWeight
+										}"
+										>{{item.text}}</div>
+								</div> -->
+								<div class="items-footer">
+									<div class="avad-img" v-for="(item,key) in item.list" 
+									:key="key" 
+									:style="{width:item.width+'%',
+										height:item.height+'%',
+										left:item.left+'%',
+										top:item.top+'%',
+										transform:'rotate('+item.rotate+'deg)',
+										}" >
+				                        <div v-if="!item.pic" class="iconfont icon-jia3"></div>
+										<img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
+				                    </div>
+								</div>
 							</div>
 					 	</div>
 						<!-- Add Pagination --> 
@@ -152,20 +170,6 @@
 	            <div class="upload" @click="uploadPic">{{hasImg?"替换图片":"添加图片"}}</div>
 	            <div class="delete" @click="deletePic">删除</div>
 	        </div>
-			<!-- 修改，上传 dom  -->
-			<div class="changeImg" v-show="isChangeImg">
-				<div class="chang-img-wrap">
-					<div class="wrap-body">
-						<div class="close-change" @click="closeChangeImg">关闭</div>
-
-						<input type="button" value="选择图片" class="getFiles" 
-						@click="getFiles" ref="uploadFiles">
-						<!-- <input type="button" value="确认已选" class="setFiles" 
-						@click="uploadImg" ref="uploadImg"> -->
-						<!-- <input type="button" value="修改图片" class="change" @click="changePics"> -->
-					</div>
-				</div>
-			</div>
 			<!-- loading -->
 	        <loading v-show="isloading">
 	        	<div slot="loadingName">
@@ -180,21 +184,17 @@
 				@setCutImage="setCutImage"
 				@showLoading='showLoading'
 				:cutUrl="iscutUrl"></cut>
-			<!-- 修改图片组件 -->
-			<!-- <chiose v-show="choiseShow" @changeImgUrl="getChoiseImg" @hidden="getChoiseImghidden" ></chiose> -->
 		</div>
     </section>
 </template>
 <script>
     import cut from '@/components/cut'
 	import loading from '@/components/loading'
-	// import chiose from '@/components/chiose'
 	import colorPicker from '@/components/color-picker'
 	import drawcvs from '@/mixins/draw-cvs'
 	import Swiper from 'swiper'
 	import {mapState,mapActions} from 'vuex'
 	import {upload,getAlbum,uploadAlbums,getSDK} from '../service/album'
-	import imgPrev from '@/components/img-prev'
 	const reloadimg=require('../../static/bg.png')
 	const isIOS = () => {
   		return /iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -278,28 +278,26 @@
 				iconlist:[],
 				hasImg:false,
 				//兼容IOS预览显示
-				iosImgPrev:[]
+				iosImgPrev:[],
+				//slide-width
+				textslide:0
             }
 		},
         components:{
 			cut,
 			loading,
-			// chiose,
 			colorPicker,
-			imgPrev
         },
         mounted(){
 			this.initSDK()
 			
         },
         computed:{
-			...mapState(['imgId','imgUrl','imglist']),
-			...mapActions(['setImg','getImg','getAll']),
+			isIOS(){
+				return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+			}
         },
         methods:{
-        	isIOS(){
-		  		return /iPhone|iPad|iPod/i.test(navigator.userAgent)
-			},
 			async initSDK(){
 				let res=await getSDK({ askUrl:location.href.split('#')[0] })
 				this.initSdk(res,(wx)=>{
@@ -308,7 +306,7 @@
                 })				
 			},
 			goMylist(){
-				// this.$router.push({name:'test'})
+
 				window.location=window.location.origin+"/mobile/User/photo_list.html"
 			},
 			prev(){
@@ -411,6 +409,11 @@
 						this.iconlist.push(list)
 					})
 				})
+				
+				//设置预览wrap宽度
+				let prevlistitems=this.$refs.prevlistitems
+				let len=this.iconlist.length
+				prevlistitems.style.width=len*2+(len-1)*0.15+'rem'
 				setTimeout(()=>{
 					 this.swiper	=new Swiper('.swiper-container', {
 					 	loop : false,
@@ -420,11 +423,13 @@
 						observer:true,
 					});
 					this.initDrawView()
+
 				},0)
 			},
 
 			//初始化
 			initDrawView(){
+
 				//初始化画布大小
 				this.cvs=this.$refs.cvs;
 				if(this.tempData.length>0){
@@ -438,23 +443,7 @@
 				this.isloading=false
 				this.loadingCont=""
 			},
-			//获取修改传过来的url
-			// getChoiseImg(url){
-			// 	const _this=this
-			// 	this.wxSDK.getLocalImgData({
-			// 		localId:url,
-			// 		success:function(res){
-			// 			if(isIOS()){
-			// 				data=res.localData.replace(/data:image\/jgp/,'data:image/jgeg')
-			// 				_this.$set(_this.current,'pic',data)
-			// 			}else{
-			// 				_this.$set(_this.current,'pic','data:image/jpeg;base64,'+res.localData)
-			// 			}
-						
-			// 		}
-			// 	})
-				
-			// },
+			
 			getDomWidthOrHeight(widthOrHeight,obj){
 				var clone=obj.cloneNode(true);
 				clone.style.display="block";
@@ -498,6 +487,11 @@
 				this.picItemCtrl=true;
 				
 			},
+			//删除相册图片
+			deleteItems(model,index){
+				this.iconlist[index].pic=""
+				this.iconlist[index].isDelete=true
+			},
 			//loading start
 			isload(){
 				this.isloading=true
@@ -515,7 +509,6 @@
 				}
 				this.current.pic=this.baseUrl+url
 				this.itemsFile=this.baseUrl+url
-				// this.$store.dispatch('setImg',url)
 				this.isCut=false
 				this.isChangeImg=false
 				this.isloading=false
@@ -528,40 +521,18 @@
 				this.isChange=false
         		this.isChangeImg=false
         	},
-			//高清预览并画成图片
-            preview(){
-				let canvas=this.$refs.tempCvas
-				let drawBox=this.$refs.cvs
-				let drawBoxWidth=drawBox.clientWidth;
-				let drawBoxHeight=drawBoxWidth/this.data.cvsRatio;
-				canvas.width=drawBoxWidth
-				canvas.height=drawBoxHeight
-				let drawData=this.data
-				let avadList=this.$refs.avadList
-				// if( !avadList ){
-				// 	alert('还未编辑一个元素')
-				// 	return
-				// }
-				let cvsBackgroundImg=this.$refs.cvsBackgroundImg
-				drawcvs.init(canvas,avadList,cvsBackgroundImg,drawData)
-				this.previewCVS=true;
-				
-		    },
             uploadPic(){
             	this.iscutUrl=reloadimg
-				this.isChange=false
-				this.isChangeImg=true
 				this.localIds=null
 				this.iosImgPrev=[]
+				this.getFiles()
 			},
 			//获取上传图片blob
-			getFiles(e){
+			getFiles(){
 				const _this=this
 				this.localIds=null
 				this.iosImgPrev=[]
 				let imgItems=0
-				e.preventDefault()
-				e.stopPropagation()
 				if(this.current.isDelete){
 					this.wxSDK.chooseImage({
 	                    count: 1,
@@ -663,14 +634,14 @@
 							alert(er)
 						}
 					})
-
-				//否则遍历添加
 				}else{
+					//否则遍历添加
 					let index=0;
 					//tempImgIndex
 					// 当前第几次上传
 					this.uploadIndex+=1;
 					__getImaData(index)
+
 					function __getImaData(_index){
 
 						//递归结束
@@ -704,6 +675,7 @@
 				//关闭选择图片组件
 				this.closeChangeImg()	
 			},
+
 			//这是图片路径
 			setImgIndexUrl(){
 				let index=0
@@ -717,6 +689,7 @@
 						this.isloading=false
 					}
 					if( _index>this.localData.length-1 ) return
+
 					if( isIOS() ){
 						let data=this.localData[_index].replace(/data:image\/jgp/,'data:image/jgeg')
 						this.$set(this.iconlist[_index],'pic',data)
@@ -726,6 +699,7 @@
 					index++
 				})
 			},
+
 			//获取input files 对象的bolob路径
     		getFileUrl(soure) {
 		        var url;
@@ -744,12 +718,8 @@
 			//修改图片
 			changePics(){
 				this.isChangeImg=false
-				// this.choiseShow=true
 			},
-			//打开修改图片组件
-			getChoiseImghidden(){
-				// this.choiseShow=false
-			},
+
 			//打开裁剪图片组件
             cutPic(){
 				let cur=this.current
@@ -778,17 +748,20 @@
 				cur.isDelete=true
 				this.isChange=false
 			},
+
 			//关闭裁剪
             cancel(){
 				this.isCut=false
 				this.closeChangeImg()
 				this.deletePicUrl()
             },
+
             //清空上传图片，预览图片路径
             deletePicUrl(){
             	this.itemsFile=null
             	this.iscutUrl=reloadimg
             },
+
             //计算显示位置
 			computPX(current){
 				let value=this.getPosition(current)
@@ -801,6 +774,7 @@
                     rotate:current.rotate
 				}
 			},
+
 			//计算实际像素位置
 			getPosition(cur){
 				return {
@@ -854,7 +828,9 @@
 					top:p.t+'px'
 				}
             },
+
 			//主操作区添加背景图片
+
 			drawBgImg(model,key){
 				this.data=model
 				this.isChange=false
@@ -973,23 +949,6 @@
 			closeCtrl(){
 				this.picItemCtrl=false
 			},
-			//保存到相册列表视图
-			saveToTpl(){
-				let cvs=this.$refs.tempCvas;
-				let ctx=cvs.getContext('2d')
-				if(!this.data.id) return
-				let temp_bg=this.$refs.temp_bg_elemts
-				let DataId=this.data.id
-				let base64Data=cvs.toDataURL('image/jpeg',.9)
-				if(temp_bg.length>0){
-					temp_bg.forEach(item=>{
-						if( item.id== DataId){
-							item.src=base64Data
-							this.previewCVS=false
-						}
-					})
-				}
-			},
 			sendAllData(){
 				let isOver=[]
 				this.tempData.forEach((item,index)=>{
@@ -1065,9 +1024,6 @@
         	isCut(prev,old){
         		this.overHidden(prev)
         	},
-        	// choiseShow(prev,old){
-        	// 	this.overHidden(prev)
-        	// },
         	previewCVS(prev,old){
         		this.overHidden(prev)
         	}
@@ -1077,6 +1033,61 @@
 <style lang="scss" scoped>
 	@import "../style/swiper.scss";
 	@import "../style/modal.scss";
+	.img-prev-list{
+		width:100%;
+		overflow-x: scroll;
+		height:220px;
+		padding:10px;
+		box-sizing: border-box;
+	}
+	.prev-list-items{
+		overflow: hidden;
+		position: relative;
+		.items{
+			position: relative;
+			overflow: hidden;
+			width:200px;
+			height:200px;
+			float:left;
+			margin-right:15px;
+			box-sizing:border-box;
+			border-radius: 3px;
+			overflow:hidden;
+			background:#ccc;
+			>.item-add{
+				position:absolute;
+				top:0;
+				bottom:0;
+				left:0;
+				right:0;
+				>div{
+					position:absolute;
+					left:50%;
+					top:50%;
+					background:#090;
+				}
+				.heng{
+					width:50px;
+					height:10px;
+					margin-top:-5px;
+					margin-left: -25px;
+				}
+				.shu{
+					width:10px;
+					height:50px;
+					margin-top:-25px;
+					margin-left: -5px;
+				}
+			}
+			>img{
+				width:100%;
+				height:100%;
+			}
+		}
+		.items:last-child{
+			margin-right:0;
+		}
+	}
 	.error{
 		position:fixed;
 		left: 0;
@@ -1104,16 +1115,10 @@
 		box-sizing: border-box;
 	}
 
-	.img-prev-list{
-		width:100%;
-		overflow: hidden;
-		height:400px;
-		padding:10px;
-		box-sizing: border-box;
-	}
+	
 	.header{
 		padding:30px 25px;
-		font-size:34px;
+		font-size:42px;
 		text-align: center;
 		color:#fff;
 		font-weight: 700;
@@ -1175,7 +1180,7 @@
         .avad-img{
              position:absolute;
              color:rgb(43, 80, 247);
-             font-size:24px;
+             font-size:36px;
 			 display: flex;
 			 justify-content: center;
 			 align-items: center;
@@ -1337,7 +1342,7 @@
 	.slicePic{
 		position:absolute;
 		z-index:400;
-		width:360px;
+		width:400px;
 		height:65px;
 		background:#000;
 		color:#fff;
@@ -1379,7 +1384,7 @@
 					height:60px;
 					border:1px solid #cecece;
 					color:#fff;
-					font-size:34px;
+					font-size:44px;
 				}
 				.readerImg{
 					margin-top:10px;
@@ -1398,7 +1403,7 @@
 					background:#093;
 					color:#fff;
 					border:none;
-					font-size:28px;
+					font-size:32px;
 					margin-top:80px;
 					background:#090;
 					border:1px solid #fff;
@@ -1410,7 +1415,7 @@
 					background:#093;
 					color:#fff;
 					border:none;
-					font-size:28px;
+					font-size:32px;
 					margin-top:30px;
 					background:#090;
 					border:1px solid #fff;
@@ -1430,14 +1435,14 @@
 					height:80px;
 					margin:20px 0;
 					display:block;
-					font-size: 24px;
+					font-size: 32px;
 					background:#900;
 					color:#fff;
 					border:1px solid #fff;
 				}
 				.close-change{
-					width:70px;
-					height:40px;
+					width:90px;
+					height:60px;
 					line-height:40px;
 					position:absolute;
 					right:10px;
@@ -1496,5 +1501,57 @@
 		width:100%;
 		box-sizing:border-box;
 		overflow-y:hidden;
+		&.opac0{
+			opacity: 0;
+		}
+		&.opac1{
+			opacity: 1;
+		}
+		.bgImg{
+			width:100%;
+			height:100%;
+			position:absolute;
+			z-index:5;
+		}
+        .avad-img{
+             position:absolute;
+             color:rgb(43, 80, 247);
+             font-size:36px;
+			 display: flex;
+			 justify-content: center;
+			 align-items: center;
+			 z-index:4;
+ 			 >div{
+				 font-size:64px;
+			 }
+			 >img{
+				 width:100%;
+				 display:block;
+				 border:none;
+				 position: absolute;
+				 top:0;
+			 }
+        }
+        .addText{
+			position: absolute;
+			z-index:400;
+			background:transparent;
+			box-sizing: border-box;
+			top:0;
+			left: 0;
+			right:0;
+			bottom:0;
+			.item-text{
+				position: absolute;
+				display: inline-block;
+				width:100%;
+				font-size:32px;
+				color:#ff0;
+				background:transparent;
+				outline:none;
+				border:none;
+				// user-modify: read-write-plaintext-only;
+			}
+		}
 	}
 </style>

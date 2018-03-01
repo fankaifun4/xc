@@ -90,7 +90,7 @@
 					this.$emit('setCutImage',uploadData.img)
 					this.isDroop=false
 					this.$emit('cancel')
-				},"image/jpeg",.8)
+				},"image/jpeg",1)
 			},
 			//重置裁剪
 			reset(){

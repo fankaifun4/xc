@@ -17,5 +17,9 @@ export default new Router({
             name: "album",
             component: r => require.ensure([], () => r(require('../pages/albumlist.vue')), 'album'),
         }]
+    },{
+        path:"/test",
+        name: "test",
+        component: r => require.ensure([], () => r(require('../pages/test.vue')), 'album'),
     }]
 })

@@ -9,7 +9,7 @@ const sourceMapEnabled = isProduction
 
 let px2config = {
     baseDpr: 2, // base device pixel ratio (default: 2)
-    remUnit: 75, // rem unit value (default: 75)
+    remUnit: 100, // rem unit value (default: 75)
     remPrecision: 10, // rem value precision (default: 6)
     forcePxComment: 'px', // force px comment (default: `px`)
     keepComment: 'no', // no transform value comment (default: `no`)
