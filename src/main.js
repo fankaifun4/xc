@@ -33,7 +33,8 @@ Vue.prototype.initSdk = (target, callback) => {
             "chooseImage",
             "previewImage",
             "uploadImage",
-            "getLocalImgData"
+            "getLocalImgData",
+            "downloadImage"
         ]
     })
 
@@ -47,7 +48,8 @@ Vue.prototype.initSdk = (target, callback) => {
             "chooseImage",
             "previewImage",
             "uploadImage",
-            "getLocalImgData"
+            "getLocalImgData",
+            "downloadImage"
         ],
         success(res) {
 

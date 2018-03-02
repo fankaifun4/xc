@@ -56,8 +56,12 @@
 	        <div class="onlodImage fade" ref="onloadImage"></div>
 	        <div class="img-prev-list">
 	        	<section class="prev-list-items" ref="prevlistitems">
-					<div v-for="(item,key) in iconlist" :key="key" class="items" @click="deleteItems(item,index)">
-						<div class="item-add" v-if="!item.pic">
+					<div v-for="(item,key) in iconlist" :key="key" class="items" >
+						<div class="delete-list-items" v-if="item.pic" 
+							@click="deleteItems(item,key)">
+		        			<div class="iconfont icon-close"></div>
+		        		</div>
+						<div class="item-add" v-if="!item.pic" @click="addImgLists(item)">
 							<div class="shu"></div>
 							<div class="heng"></div>
 						</div>
@@ -122,7 +126,6 @@
 	        </div>
 	        <div class="ctrl-alumb-wrap" >
 	        	<div class="saveImg" @click="addTextBtn">添加文字</div>
-				<!-- <div class="saveImg" @click="preview">预览高清,并去保存当前相片</div> -->
 				<div class="saveImg" @click="sendAllData">已完成相册，确定提交</div>
 	        </div>
 			<footer class="footer">
@@ -131,19 +134,6 @@
 						<div class="swiper-wrapper">
 							<div class="swiper-slide" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
 								<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
-								<!-- <div class="addText" ref="textslide">
-									<div class="item-text" 
-										v-for="(item,key) in item.textList" 
-										:key="key" 
-										:style="{
-											top:item.style.top,
-											left:item.style.left,
-											color:item.style.color,
-											'font-size':textslide*item.style.relFontSize,
-											'font-weight':item.style.fontWeight
-										}"
-										>{{item.text}}</div>
-								</div> -->
 								<div class="items-footer">
 									<div class="avad-img" v-for="(item,key) in item.list" 
 									:key="key" 
@@ -280,7 +270,11 @@
 				//兼容IOS预览显示
 				iosImgPrev:[],
 				//slide-width
-				textslide:0
+				textslide:0,
+				//wx下载到本地图片列表
+				downloadWXImgId:[],
+				//wx上传到服务器图片列表
+				uploadWXImgId:[]
             }
 		},
         components:{
@@ -289,7 +283,7 @@
 			colorPicker,
         },
         mounted(){
-			this.initSDK()
+			this.init()
 			
         },
         computed:{
@@ -298,7 +292,7 @@
 			}
         },
         methods:{
-			async initSDK(){
+			async init(){
 				let res=await getSDK({ askUrl:location.href.split('#')[0] })
 				this.initSdk(res,(wx)=>{
 					this.wxSDK=wx
@@ -521,6 +515,10 @@
 				this.isChange=false
         		this.isChangeImg=false
         	},
+        	addImgLists(model){
+        		this.current=model
+        		this.getFiles()
+        	},
             uploadPic(){
             	this.iscutUrl=reloadimg
 				this.localIds=null
@@ -537,7 +535,7 @@
 					this.wxSDK.chooseImage({
 	                    count: 1,
 	                    sizeType: ['original'], // 可以指定是原图还是压缩图，默认二者都有
-	                    sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
+	                    // sourceType: ['album'], // 可以指定来源是相册还是相机，默认二者都有
 	                    success: function (res) {
 	                        // 返回选定照片的本地ID列表，localId可以作为img标签的src属性显示图片
 							_this.localIds = res.localIds;
@@ -595,6 +593,7 @@
 				this.isloading=true
 				//如果是删除了图片则只进行替换
 				if( this.current.isDelete  ){
+					
 					_this.wxSDK.getLocalImgData({
 						localId:_this.localIds[0],
 						success:function(res){
@@ -605,7 +604,6 @@
 							}else{
 								_this.$set(_this.current,'pic','data:image/jpeg;base64,'+data)
 							}
-							
 							_this.isloading=false
 						},
 						fail:function(er){
@@ -618,6 +616,7 @@
 
 				//如果已有图片则替换
 				if(this.hasImg){
+					
 					_this.wxSDK.getLocalImgData({
 						localId:_this.localIds[0],
 						success:function(res){
@@ -641,9 +640,7 @@
 					// 当前第几次上传
 					this.uploadIndex+=1;
 					__getImaData(index)
-
 					function __getImaData(_index){
-
 						//递归结束
 						if(_index>=_this.localIds.length) {
 							_this.isloading=false
@@ -689,7 +686,6 @@
 						this.isloading=false
 					}
 					if( _index>this.localData.length-1 ) return
-
 					if( isIOS() ){
 						let data=this.localData[_index].replace(/data:image\/jgp/,'data:image/jgeg')
 						this.$set(this.iconlist[_index],'pic',data)
@@ -722,23 +718,27 @@
 
 			//打开裁剪图片组件
             cutPic(){
+            	let _this=this
 				let cur=this.current
 				let cvs=this.$refs.tempCvas
 				let id=cur.id
 				let img=document.querySelector('#'+id)
-				this.iscutUrl=cur.pic
-				if( img && !img.complete ){
+				this.isloading=true
+		        img.src=cur.pic
+		        _this.iscutUrl=cur.pic
+		        if( img && !img.complete ){
 					alert("请等待相册元素加载完成")
 					return
 				}
-				if(!this.iscutUrl) {
+				if(!_this.iscutUrl) {
 					alert('没有裁剪的图片，请先添加图片')
 					this.isChange=false
 					return
 				}
-				this.ratio=cur.aspectRatio
-				this.isCut=true
-				this.isChange=false
+				_this.ratio=cur.aspectRatio
+				_this.isCut=true
+				_this.isChange=false
+				_this.isloading=false
 			},
 			//删除图片
 			deletePic(){
@@ -950,6 +950,7 @@
 				this.picItemCtrl=false
 			},
 			sendAllData(){
+				this.isloading=true
 				let isOver=[]
 				this.tempData.forEach((item,index)=>{
 					let bgList={
@@ -1000,6 +1001,7 @@
 					this.isloading=true;
 					window.location=window.location.origin+"/mobile/photo/route?user_id="+this.user_id+'&goods_id='+this.goods_id+'&id='+this.modelId
 				}else{
+					this.isloading=false;
 					alert("提交失败")
 				}
 			},
@@ -1034,26 +1036,37 @@
 	@import "../style/swiper.scss";
 	@import "../style/modal.scss";
 	.img-prev-list{
-		width:100%;
+		margin:0 15px;
 		overflow-x: scroll;
-		height:220px;
-		padding:10px;
+		height:260px;
 		box-sizing: border-box;
 	}
 	.prev-list-items{
-		overflow: hidden;
+		margin-top:35px;
 		position: relative;
 		.items{
 			position: relative;
-			overflow: hidden;
 			width:200px;
 			height:200px;
 			float:left;
 			margin-right:15px;
 			box-sizing:border-box;
 			border-radius: 3px;
-			overflow:hidden;
 			background:#ccc;
+			.delete-list-items{
+				position: absolute;
+				right:-40px;
+				top:-40px;
+				width:80px;
+				height:80px;
+				z-index:10;
+				>div{
+					width:100%;
+					height:100%;
+					color:#fff;
+					font-size:66px;
+				}
+			}
 			>.item-add{
 				position:absolute;
 				top:0;
@@ -1082,6 +1095,7 @@
 			>img{
 				width:100%;
 				height:100%;
+				z-index:1;
 			}
 		}
 		.items:last-child{
