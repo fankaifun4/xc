@@ -293,14 +293,14 @@
         },
         methods:{
 			async init(){
-				let res=await getSDK({ askUrl:location.href.split('#')[0] })
+				let url= window.encodeURIComponent(location.href.split('#')[0]) 
+				let res=await getSDK({ askUrl:url })
 				this.initSdk(res,(wx)=>{
 					this.wxSDK=wx
 					this.getData()
                 })				
 			},
 			goMylist(){
-
 				window.location=window.location.origin+"/mobile/User/photo_list.html"
 			},
 			prev(){
@@ -971,6 +971,7 @@
 				})
 				
 				let jsondata = this.tempData 
+				console.log(jsondata)
 				let formData=new FormData()
 				formData.append('user_id',this.user_id)
 				formData.append('id',this.modelId)

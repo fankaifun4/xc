@@ -4,16 +4,14 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import store from './store/store.js'
-import VConsole from 'vconsole'
+// import VConsole from 'vconsole'
 var wx = require('weixin-js-sdk')
 import '@/libs/flexlib.js'
 import "@/style/comm.scss"
-window.vConsole = new VConsole();
+// window.vConsole = new VConsole();
 
 Vue.config.productionTip = true
     /* eslint-disable no-new */
-
-
 
 //config wx-js-sdk   
 
@@ -52,9 +50,13 @@ Vue.prototype.initSdk = (target, callback) => {
             "downloadImage"
         ],
         success(res) {
-
         }
     })
+    wx.ready(function(){
+        wx.onMenuShareAppMessage({
+        })
+    })
+
     callback(wx)
 
     // return wx
