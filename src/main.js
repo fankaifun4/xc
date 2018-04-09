@@ -49,12 +49,10 @@ Vue.prototype.initSdk = (target, callback) => {
             "getLocalImgData",
             "downloadImage"
         ],
-        success(res) {
-        }
+        success(res) {}
     })
-    wx.ready(function(){
-        wx.onMenuShareAppMessage({
-        })
+    wx.ready(function() {
+        wx.onMenuShareAppMessage({})
     })
 
     callback(wx)

@@ -971,7 +971,6 @@
 				})
 				
 				let jsondata = this.tempData 
-				console.log(jsondata)
 				let formData=new FormData()
 				formData.append('user_id',this.user_id)
 				formData.append('id',this.modelId)
