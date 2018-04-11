@@ -48,7 +48,7 @@
 							transform:'rotate('+item.rotate+'deg)',
 							}" >
 	                        <div v-if="!item.pic" class="iconfont icon-jia3"></div>
-							<img v-if="item.pic" style="width:100%;height:100%"  :src="item.pic">
+							<img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
 	                    </div>
 	                </div>
 	            </div>
@@ -132,8 +132,8 @@
 				<div class="img-items">
 					<div class="img-wrap swiper-container swiper-container-horizontal" ref="imgWrap">
 						<div class="swiper-wrapper">
-							<div class="swiper-slide" ref="sendDataImg" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
-								<img bg-img :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
+							<div class="swiper-slide" :class="{'active':isActive==key}" v-for="(item,key) in tempData" :key="key">
+								<img  :src="item.bgImg" :id="item.id" ref="temp_bg_elemts" alt=""  @click="drawBgImg(item,key)">
 								<div class="items-footer">
 									<div class="avad-img" v-for="(item,key) in item.list" 
 									:key="key" 
@@ -144,7 +144,7 @@
 										transform:'rotate('+item.rotate+'deg)',
 										}" >
 				                        <div v-if="!item.pic" class="iconfont icon-jia3"></div>
-										<img item-img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
+										<img v-if="item.pic" style="width:100%;height:100%" :id="item.id" :src="item.pic" ref="avadList">
 				                    </div>
 								</div>
 							</div>
@@ -175,9 +175,6 @@
 				@showLoading='showLoading'
 				:cutUrl="iscutUrl"></cut>
 		</div>
-		<div style="display:none">
-			<canvas ref="senImgWrap"></canvas>
-		</div>
     </section>
 </template>
 <script>
@@ -187,8 +184,7 @@
 	import drawcvs from '@/mixins/draw-cvs'
 	import Swiper from 'swiper'
 	import {mapState,mapActions} from 'vuex'
-	import {upload,getAlbum,uploadAlbums,getSDK,uploadBolb} from '../service/album'
-	import '../libs/jquery.min'
+	import {upload,getAlbum,uploadAlbums,getSDK} from '../service/album'
 	const reloadimg=require('../../static/bg.png')
 	const isIOS = () => {
   		return /iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -196,8 +192,6 @@
     export default{
         data(){
             return{
-				//测试图片生成路径
-				testImg:[],
             	error:false,
                 name:'showIndex',
                 //loading 开关
@@ -373,8 +367,7 @@
         	},
         	async getData(){
         		this.isloading=true
-				this.loadingCont="正在初始化请稍后..."
-				this.$route.query.id=6
+        		this.loadingCont="正在初始化请稍后..."
         		if(!this.$route.query.id){
         			// alert('您还没有登录，请登陆后重试')
         			this.error=true
@@ -731,7 +724,7 @@
 				let id=cur.id
 				let img=document.querySelector('#'+id)
 				this.isloading=true
-				img.src=cur.pic
+		        img.src=cur.pic
 		        _this.iscutUrl=cur.pic
 		        if( img && !img.complete ){
 					alert("请等待相册元素加载完成")
@@ -976,53 +969,28 @@
 						imgIndex.push(item.index+1)
 					}
 				})
-				let canvas=this.$refs.senImgWrap
-				let _this=this
-				let listWrap=this.$refs.sendDataImg
-				let sedImgFormData=new FormData()
-				sedImgFormData.append('user_id',this.user_id)
-				sedImgFormData.append('id',this.modelId)
-				sedImgFormData.append('goods_id',this.goods_id)
-				listWrap.forEach(item=>{
-					var drawData = null;
-					let bgImg=$(item).find('[bg-img]')[0]
-					let itemImg=$(item).find('[item-img]')
-					let id=bgImg.id
-
-					this.tempData.forEach(function(item) {
-						if (item.id === id) {
-							drawData = item
-							return;
-						}
-					})
-					let avartList=[]
-					itemImg.each(function(index) {
-						avartList.push($(this)[0])
-					})
-					var width = bgImg.naturalWidth
-					var height = bgImg.naturalHeight
-					canvas.width = width
-					canvas.height = height
-					drawcvs.init(canvas, avartList, bgImg, drawData)
-					canvas.toBlob((blob)=>{
-						this.testImg.push(URL.createObjectURL(blob))
-						sedImgFormData.append('.jpg',blob)
-					})
-				})
-				return;
+				
+				let jsondata = this.tempData 
+				let formData=new FormData()
+				formData.append('user_id',this.user_id)
+				formData.append('id',this.modelId)
+				formData.append('goods_id',this.goods_id)
+				formData.append('jsondata',JSON.stringify(jsondata))
 				if(imgIndex.length>0){
 					let alertIndex=imgIndex.toString()
 					let isNext=confirm('还有第'+alertIndex+'张未设置完成，暂时将当前相册保存到服务器？')
 					if(isNext){
-						this.uploadAlums(sedImgFormData)
+						this.uploadAlums(formData)
 					}else{
+						this.isloading=false
 						return
 					}
 				}else{
 					let isUplod=confirm('确定要上传所有主题相册吗？')
 					if(isUplod){
-						this.uploadAlums(sedImgFormData)
+						this.uploadAlums(formData)
 					}else{
+						this.isloading=false
 						return;
 					}
 				}
