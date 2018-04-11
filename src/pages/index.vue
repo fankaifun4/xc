@@ -196,6 +196,7 @@
     export default{
         data(){
             return{
+				//测试图片生成路径
 				testImg:[],
             	error:false,
                 name:'showIndex',
