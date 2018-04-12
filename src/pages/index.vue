@@ -501,8 +501,8 @@
 					this.isloading=false
 					return
 				}
-				this.current.pic=this.baseUrl+url
-				this.itemsFile=this.baseUrl+url
+				this.current.pic=url
+				this.itemsFile=url
 				this.isCut=false
 				this.isChangeImg=false
 				this.isloading=false
@@ -724,15 +724,23 @@
 				let id=cur.id
 				let img=document.querySelector('#'+id)
 				this.isloading=true
+				if( !cur.pic ){
+					alert('没有裁剪的图片，请先添加图片')
+					this.isChange=false
+					this.isloading=false
+					return
+				}
 		        img.src=cur.pic
 		        _this.iscutUrl=cur.pic
 		        if( img && !img.complete ){
 					alert("请等待相册元素加载完成")
+					this.isloading=false
 					return
 				}
 				if(!_this.iscutUrl) {
 					alert('没有裁剪的图片，请先添加图片')
 					this.isChange=false
+					this.isloading=false
 					return
 				}
 				_this.ratio=cur.aspectRatio

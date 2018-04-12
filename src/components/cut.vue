@@ -80,16 +80,21 @@
 				this.isDroop=true;
 			},
 			//保存裁剪素材
-			async getSave(){
+			getSave(){
 				this.$parent.isloading=true
-				this.cropper.getCroppedCanvas().toBlob(async (boble)=>{
-					var formData = new FormData()
-					formData.append('file',boble,'jpg')
-					let uploadData = await upload(formData)
-					this.$parent.isloading=false
-					this.$emit('setCutImage',uploadData.img)
-					this.isDroop=false
-					this.$emit('cancel')
+				let _this=this
+				this.cropper.getCroppedCanvas().toBlob(blob=>{
+					let a = new FileReader();
+					a.onload = function(e) {
+						_this.$parent.isloading=false	
+						let url=e.target.result
+						_this.$emit('setCutImage',url)
+						_this.isDroop=false
+						_this.$emit('cancel')
+					}
+					a.readAsDataURL(blob);	
+					// let url = URL.createObjectURL(boble);
+					
 				},"image/jpeg",1)
 			},
 			//重置裁剪

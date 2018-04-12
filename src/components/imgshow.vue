@@ -26,7 +26,7 @@
 					top:item.top+'%',
 					transform:'rotate('+item.rotate+'deg)',
 				}" >
-				<img v-if="item.pic" style="width:100%;height:100%"  :src="item.pic" >
+				<img v-if="item.pic" style="width:100%;height:100%"  :src="baseUrl+item.pic" >
             </div>
         </div>
 	</div>
@@ -36,10 +36,12 @@
 		props:["imgdata"],
 		data(){
 			return{
-				fontStyle:null
+				fontStyle:null,
+				baseUrl:""
 			}
 		},
 		mounted(){
+			this.baseUrl=window.location.origin+'/'
 			this.fontRealSize()
 		},
 		methods:{
