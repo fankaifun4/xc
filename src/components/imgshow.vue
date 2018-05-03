@@ -26,7 +26,7 @@
 					top:item.top+'%',
 					transform:'rotate('+item.rotate+'deg)',
 				}" >
-				<img v-if="item.pic" style="width:100%;height:100%"  :src="baseUrl+item.pic" >
+				<img v-if="item.pic" style="width:100%;height:100%"  :src="'/'+item.pic" >
             </div>
         </div>
 	</div>
@@ -41,7 +41,7 @@
 			}
 		},
 		mounted(){
-			this.baseUrl=window.location.origin+'/'
+			this.baseUrl='/'
 			this.fontRealSize()
 		},
 		methods:{

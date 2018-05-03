@@ -599,7 +599,7 @@
 						success:function(res){
 							let data=res.localData
 							if( isIOS() ){
-								data=res.localData.replace(/data:image\/jgp/,'data:image/jgeg')
+								data=res.localData.replace(/data:image\/jgp/,'data:image/jpeg')
 								_this.$set(_this.current,'pic',data)
 							}else{
 								_this.$set(_this.current,'pic','data:image/jpeg;base64,'+data)
