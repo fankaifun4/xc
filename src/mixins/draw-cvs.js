@@ -18,8 +18,8 @@ export default {
         this.textList = data.textList
         this.ctx = this.cvs.getContext('2d')
         this.ctx.clearRect(0, 0, this.cvs.width, this.cvs.height)
-        let cvsHeight = cvs.height
-        let cvsWidth = cvs.width
+        let cvsHeight = cvs.height*3
+        let cvsWidth = cvs.width*3
         let templObj = {}
         data.list.forEach(item => {
                 templObj = {}
