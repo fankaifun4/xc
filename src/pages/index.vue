@@ -369,7 +369,7 @@
         		this.isloading=true
         		this.loadingCont="正在初始化请稍后..."
         		if(!this.$route.query.id){
-        			// alert('您还没有登录，请登陆后重试')
+        			alert('您还没有登录，请登陆后重试')
         			this.error=true
         			this.isloading=false
         			return
